@@ -1,0 +1,362 @@
+syntax = "proto3";
+package  rentitup.catalog;
+
+option java_multiple_files=true;
+option java_package="com.rentitup.shared.proto.catalog";
+option java_outer_classname="CatalogProto";
+
+import "common.proto";
+import "user.proto";
+
+enum MachineCondition {
+  MACHINE_CONDITION_UNSPECIFIED=0;
+  EXCELLENT=1;
+  GOOD=2;
+  FAIR=3;
+}
+
+enum MachineStatus {
+  MACHINE_STATUS_UNSPECIFIED=0;
+  AVAILABLE=1;
+  RENTED=2;
+  MAINTENANCE=3;
+  INACTIVE=4;
+}
+
+enum PriceCalculationType {
+  PRICE_CALCULATION_TYPE_UNSPECIFIED=0;
+  HOURLY=1;
+  DAILY=2;
+  WEEKLY=3;
+  DISTANCE_BASED=4;
+}
+
+message Category{
+  string id=1;
+  string name = 2;
+  string description=3;
+  string icon_url =4;
+  PriceCalculationType default_price_type = 5;
+  int32 machine_count=6;
+}
+
+message MachineImage {
+  string id=1;
+  string url=2;
+  bool is_primary=3;
+  int32 display_order=4;
+  rentitup.common.Timestamp uploaded_at=5;
+}
+
+message MaintenanceRecord {
+  string id= 1;
+  string machine_id =2;
+  rentitup.common.Date service_date =3;
+  string description =4;
+  string performed_by =5;
+  rentitup.common.Date next_service_date =6;
+  rentitup.common.Timestamp created_at = 7;
+}
+
+message  Machine {
+  string id =1;
+  string owner_id=2;
+  string category_id=3;
+  string name = 4;
+  string description=5;
+  rentitup.common.Money basePrice=6;
+  PriceCalculationType price_type=7;
+  MachineCondition condition = 8;
+  MachineStatus status = 9;
+  rentitup.common.Location location = 10;
+  bool is_available = 11;
+  rentitup.common.Timestamp created_at=12;
+  rentitup.common.Timestamp updated_at=13;
+  map<string,string> specifications=14;
+  repeated MachineImage images=15;
+  Category category=16;
+
+  user.User owner=17;
+  double average_rating =18;
+  int32 total_reviews=19;
+  int32 total_rentals=20;
+}
+
+message MachineSummary {
+  string id = 1;
+  string name = 2;
+  string primary_image_url = 3;
+  rentitup.common.Money base_price = 4;
+  PriceCalculationType price_type = 5;
+  MachineCondition condition = 6;
+  double average_rating = 7;
+  rentitup.common.Location location = 8;
+}
+
+
+message CreateCategoryRequest {
+  string name = 1;
+  string description = 2;
+  string icon_url = 3;
+  PriceCalculationType default_price_type = 4;
+}
+message GetCategoryRequest {
+  string id = 1;
+}
+
+message UpdateCategoryRequest {
+  string id = 1;
+  optional string name =2 ;
+  optional string description=3;
+  optional string icon_url=4;
+  optional PriceCalculationType default_price_type=5;
+}
+
+message DeleteCategoryRequest {
+  string id =1;
+}
+
+message DeleteCategoryResponse {
+  bool success =1;
+  string message =2;
+}
+
+message ListCategoriesRequest {
+    rentitup.common.PaginationRequest pagination =1;
+    bool include_empty=2;
+}
+
+message CategoryResponse {
+  Category response =1;
+}
+
+message ListCategoriesResponse {
+    repeated Category categories =1;
+    rentitup.common.PaginationResponse pagination =2;
+}
+
+
+message CreateMachineRequest {
+  string owner_id = 1;
+  optional string category_id =2;
+  string name =3;
+  string description=4;
+  optional rentitup.common.Money base_price = 5;
+  optional PriceCalculationType price_type =6;
+  optional MachineCondition condition = 7;
+  optional rentitup.common.Location location = 8;
+  map<string,string> specifications = 9;
+  optional bool  is_available=10;
+}
+
+message GetMachineRequest {
+  string id =1;
+  bool include_owner = 2;
+  bool include_reviews =3;
+}
+
+message UpdateMachineRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description =3;
+  optional rentitup.common.Money base_price = 4;
+  optional PriceCalculationType price_type = 5;
+  optional MachineCondition condition = 6;
+  optional rentitup.common.Location location =7;
+  optional string category_id=8;
+  map<string, string> specifications =9;
+  optional  bool is_available = 10;
+}
+
+message  DeleteMachineRequest {
+  string id =1;
+}
+message DeleteMachineResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListMachinesRequest {
+  rentitup.common.PaginationRequest pagination = 1;
+  optional string category_id = 2;
+  optional MachineStatus status = 3;
+  optional MachineCondition min_condition =4;
+}
+
+message SearchMachinesRequest {
+  rentitup.common.PaginationRequest pagination = 1;
+
+  optional string query = 2;
+
+  optional string category_id = 3;
+  optional rentitup.common.Money min_price = 4;
+  optional rentitup.common.Money max_price = 5;
+  optional MachineCondition min_condition = 6;
+  optional double min_rating = 7;
+
+  optional rentitup.common.Location near_location = 8;
+  optional double radius_km = 9;
+
+  optional rentitup.common.Date available_from = 10;
+  optional rentitup.common.Date available_to = 11;
+}
+
+
+message GetMachinesByOwnerRequest {
+  string owner_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+  optional MachineStatus status = 3;
+}
+
+message GetFeaturedMachinesRequest {
+  int32 limit = 1;
+  optional string category_id = 2;
+}
+
+message GetNearbyMachinesRequest {
+  rentitup.common.Location location = 1;
+  double radius_km = 2;
+  rentitup.common.PaginationRequest pagination = 3;
+  optional string category_id = 4;
+}
+
+message MachineResponse {
+  Machine machine = 1;
+}
+
+message ListMachinesResponse {
+  repeated Machine machines = 1;
+  rentitup.common.PaginationResponse pagination = 2;
+}
+
+message AddMachineImageRequest {
+  string machine_id = 1;
+  string url = 2;
+  bool is_primary = 3;
+}
+
+message RemoveMachineImageRequest {
+  string machine_id = 1;
+  string image_id = 2;
+}
+
+message SetPrimaryImageRequest {
+  string machine_id =1;
+  string image_id = 2;
+}
+
+message AddMaintenanceRecordRequest {
+  string machine_id = 1;
+  rentitup.common.Date service_date = 2;
+  string description = 3;
+  string performed_by = 4;
+  optional rentitup.common.Date next_service_date = 5;
+}
+
+message GetMaintenanceHistoryRequest {
+  string machine_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+}
+
+message GetUpcomingMaintenanceRequest {
+  string owner_id = 1;
+  int32  days_ahead = 2;
+}
+
+message MaintenanceRecordResponse {
+  MaintenanceRecord record = 1;
+}
+
+message MaintenanceHistoryResponse {
+  repeated MaintenanceRecord records = 1;
+  rentitup.common.PaginationResponse pagination = 2;
+}
+
+
+message CheckAvailabilityRequest {
+  string machine_id = 1;
+  rentitup.common.Date start_date = 2;
+  rentitup.common.Date end_date = 3;
+}
+
+message CheckAvailabilityResponse {
+  bool available = 1;
+  string reason =2;
+}
+
+message UpdateMachineStatusRequest {
+  string machine_id = 1;
+  MachineStatus status = 2;
+  string reason = 3;
+}
+
+message GetMachineBatchRequest {
+  repeated string machine_ids =1;
+}
+
+message GetMachinesBatchResponse {
+  map<string, Machine> machines = 1;
+}
+
+message UpdateMachineRatingRequest {
+  string machine_id = 1;
+  double new_average_rating = 2;
+  int32 total_reviews = 3;
+}
+
+service CatalogueService {
+
+  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse);
+  rpc GetCategory(GetCategoryRequest) returns (CategoryResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (CategoryResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+
+  rpc CreateMachine(CreateMachineRequest) returns (MachineResponse);
+  rpc GetMachine(GetMachineRequest) returns (MachineResponse);
+  rpc UpdateMachine(UpdateMachineRequest) returns (MachineResponse);
+  rpc DeleteMachine(DeleteMachineRequest) returns (DeleteMachineResponse);
+  rpc ListMachines(ListMachinesRequest) returns (ListMachinesResponse);
+  rpc SearchMachines(SearchMachinesRequest) returns (ListMachinesResponse);
+  rpc GetMachinesByOwner(GetMachinesByOwnerRequest) returns (ListMachinesResponse);
+  rpc GetFeaturedMachines(GetFeaturedMachinesRequest) returns (ListMachinesResponse);
+  rpc GetNearbyMachines(GetNearbyMachinesRequest) returns (ListMachinesResponse);
+
+  rpc AddMachineImage (AddMachineImageRequest) returns (MachineResponse);
+  rpc RemoveMachineImage (RemoveMachineImageRequest) returns (MachineResponse);
+  rpc SetPrimaryImage (SetPrimaryImageRequest) returns (MachineResponse);
+
+  rpc AddMaintenanceRecord (AddMaintenanceRecordRequest) returns (MaintenanceRecordResponse);
+  rpc GetMaintenanceHistory (GetMaintenanceHistoryRequest) returns (MaintenanceHistoryResponse);
+  rpc GetUpcomingMaintenance (GetUpcomingMaintenanceRequest) returns (MaintenanceHistoryResponse);
+
+  // for the booking service to check availability
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+  rpc UpdateMachineStatus(UpdateMachineRatingRequest) returns (MachineResponse);
+
+  rpc GetMachinesBatch(GetMachineBatchRequest) returns (GetMachinesBatchResponse);
+
+  // called by the review service to update the rating of the given machine
+  rpc UpdateMachineRating (UpdateMachineRatingRequest) returns (MachineResponse);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

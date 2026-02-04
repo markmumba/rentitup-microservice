@@ -1,0 +1,88 @@
+syntax="proto3";
+package  rentitup.user;
+
+option java_multiple_files=true;
+option java_package="rentitup.shared.proto.user";
+option java_outer_classname="UserProto";
+
+import "common.proto";
+
+enum UserType{
+  USER_TYPE_UNSPECIFIED = 0;
+  OWNER=1;
+  CUSTOMER=2;
+  ADMIN = 3;
+}
+
+enum KycStatus {
+  KYC_STATUS_UNSPECIFIED=0;
+  PENDING=1;
+  VERIFIED=2;
+  REJECTED=3;
+}
+
+message User {
+  string id =1;
+  string email =2;
+  string full_name=3;
+  string phone =4;
+  UserType user_type=5;
+  KycStatus kyc_status = 6;
+  rentitup.common.Timestamp created_at=7;
+  rentitup.common.Timestamp verified_at=8;
+  rentitup.common.Timestamp updated_at =9;
+}
+
+
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+  string full_name = 3;
+  string phone =4;
+  UserType user_type =5;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email =1;
+}
+message UpdateUserRequest {
+  string id = 1;
+  optional string fullname =2;
+  optional string phone =3;
+  optional string business_license = 4;
+}
+
+
+message VerifyUserRequest {
+  string id =1;
+  KycStatus kyc_status =2;
+}
+
+message ListUserRequest {
+  rentitup.common.PaginationRequest pagination = 1;
+  optional UserType user_type =2;
+  optional KycStatus ky_status =3;
+}
+
+message UserResponse {
+  User user =1;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  rentitup.common.PaginationResponse pagination =2;
+}
+
+service UserServices {
+  rpc CreateUser(CreateUserRequest) returns (UserResponse);
+  rpc GetUser (GetUserRequest) returns(UserResponse);
+  rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
+  rpc UpdateUser (UpdateUserRequest) returns (UserResponse);
+  rpc VerifyUser(VerifyUserRequest) returns (UserResponse);
+  rpc ListUserResponse (ListUserRequest) returns (ListUsersResponse);
+}
+

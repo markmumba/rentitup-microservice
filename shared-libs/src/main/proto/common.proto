@@ -1,0 +1,51 @@
+syntax ="proto3";
+package rentitup.common;
+
+option java_multiple_files=true;
+option java_package="com.rentitup.shared.proto.common";
+option java_outer_classname = "CommonProto";
+
+message Money {
+  string amount =  1;
+  string currency =2;
+}
+
+message Location {
+  double latitude =1;
+  double longitude =2;
+  string address =3;
+  string city =4;
+}
+
+message PaginationRequest {
+  int32 page =1;
+  int32 size = 2;
+  string sort_by =3;
+  bool descending =4;
+}
+
+message PaginationResponse {
+  int32 current_page=1;
+  int32 total_pages=2;
+  int64 total_elements=3;
+  int32 page_size=4;
+  bool has_next=5;
+  bool has_previous=6;
+}
+
+message Timestamp {
+  int64 seconds=1;
+  int32 nanos=2;
+}
+
+message Date {
+  int32 year=1;
+  int32 month=2;
+  int32 day=3;
+}
+
+message ErrorDetail {
+  string field=1;
+  string message =2;
+  string code =3;
+}

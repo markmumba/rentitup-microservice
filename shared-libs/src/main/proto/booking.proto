@@ -1,0 +1,188 @@
+syntax = "proto3";
+package rentitup.booking;
+
+option java_multiple_files=true;
+option java_package = "rentitup.shared.proto.booking";
+option java_outer_classname = "BookingProto";
+
+import "common.proto";
+
+
+enum BookingStatus {
+  BOOKING_STATUS_UNSPECIFIED =0;
+  BOOKING_PENDING = 1;
+  BOOKING_CONFIRMED = 2;
+  BOOKING_ONGOING = 3;
+  BOOKING_COMPLETED = 4;
+  BOOKING_CANCELLED = 5;
+}
+
+enum PaymentType {
+  PAYMENT_TYPE_UNSPECIFIED =0;
+  DEPOSIT = 1;
+  FULL_PAYMENT = 2;
+  SECURITY_DEPOSIT = 3;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_PENDING = 1;
+  PAYMENT_COMPLETED =2;
+  PAYMENT_REFUNDED = 3;
+  PAYMENT_FAILED = 4;
+}
+
+
+message Booking {
+  string id = 1;
+  string machine_id = 2;
+  string customer_id = 3;
+  rentitup.common.Timestamp start_date = 4;
+  rentitup.common.Timestamp end_date = 5;
+  rentitup.common.Location pickup_location = 6;
+  BookingStatus status = 7;
+  rentitup.common.Money total_amount = 8;
+  string special_requirements = 9;
+  rentitup.common.Timestamp created_at = 10;
+
+  repeated Payment payments = 11;
+  Review review = 12;
+}
+
+message Payment {
+  string id = 1;
+  string booking_id = 2;
+  string idempotency_key = 3;
+  rentitup.common.Money amount = 4;
+  PaymentType payment_type = 5;
+  PaymentStatus status = 6;
+  rentitup.common.Timestamp paid_at = 7;
+}
+message Review {
+  string id = 1;
+  string booking_id = 2;
+  string reviewer_id = 3;
+  int32 machine_rating = 4;
+  int32 owner_rating = 5;
+  string comment = 6;
+  rentitup.common.Timestamp created_at = 7;
+}
+
+message CreateBookingRequest {
+  string machine_id = 1;
+  string customer_id = 2;
+  rentitup.common.Timestamp start_date = 3;
+  rentitup.common.Timestamp end_date =4;
+  rentitup.common.Location pickup_location = 5;
+  string special_requirements = 6;
+}
+
+message GetBookingRequest {
+  string id = 1;
+}
+
+message UpdateBookingStatusRequest {
+  string id = 1;
+  BookingStatus status = 2;
+}
+message CancelBookingRequest {
+  string id = 1;
+  string reason = 2;
+}
+message ListBookingsByCustomerRequest{
+  string customer_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+  optional BookingStatus status = 3;
+}
+
+message ListBookingsByMachineRequest {
+  string machine_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+}
+
+message ListBookingsForOwnerRequest {
+  string owner_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+  optional BookingStatus status = 3;
+}
+
+message BookingResponse {
+  Booking booking = 1;
+}
+
+message ListBookingsResponse {
+  repeated Booking bookings = 1;
+  rentitup.common.PaginationResponse pagination =2;
+}
+
+message CreatePaymentRequest {
+  string booking_id = 1;
+  rentitup.common.Money amount = 2;
+  PaymentType payment_type = 3;
+}
+
+message UpdatePaymentStatusRequest {
+  string id = 1;
+  PaymentStatus status = 2;
+}
+
+message GetPaymentsByBookingRequest {
+  string booking_id = 1;
+}
+
+message PaymentResponse {
+  Payment payment = 1;
+}
+message PaymentsResponse {
+  repeated Payment payments = 1;
+}
+
+message CreateReviewRequest {
+  string booking_id = 1;
+  string reviewer_id = 2;
+  int32 machine_rating =3;
+  int32 owner_rating = 4;
+  string comment = 5;
+}
+
+message GetReviewsByMachineRequest {
+  string machine_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+}
+
+message GetReviewsByOwnerRequest {
+  string owner_id = 1;
+  rentitup.common.PaginationRequest pagination = 2;
+}
+
+message ReviewResponse {
+  Review review = 1;
+}
+
+message ReviewsResponse {
+  repeated Review reviews = 1;
+  rentitup.common.PaginationResponse pagination = 2;
+}
+
+
+service BookingService {
+  rpc CreateBooking(CreateBookingRequest) returns (BookingResponse);
+  rpc GetBooking(GetBookingRequest) returns (BookingResponse);
+  rpc UpdateBookingStatus(UpdateBookingStatusRequest) returns (BookingResponse);
+  rpc CancelBooking(CancelBookingRequest) returns (BookingResponse);
+  rpc ListBookingsByCustomer(ListBookingsByCustomerRequest) returns (ListBookingsResponse);
+  rpc ListBookingsByMachine(ListBookingsByMachineRequest) returns (ListBookingsResponse);
+  rpc ListBookingsForOwner(ListBookingsForOwnerRequest) returns (ListBookingsResponse);
+
+  rpc CreatePayment(CreatePaymentRequest) returns (PaymentResponse);
+  rpc UpdatePaymentStatus(UpdatePaymentStatusRequest) returns (PaymentResponse);
+  rpc GetPaymentsByBooking(GetPaymentsByBookingRequest) returns (PaymentsResponse);
+
+  rpc CreateReview(CreateReviewRequest) returns (ReviewResponse);
+  rpc GetReviewsByMachine(GetReviewsByMachineRequest) returns (ReviewsResponse);
+  rpc GetReviewsByOwner(GetReviewsByOwnerRequest) returns (ReviewsResponse);
+}
+
+
+
+
