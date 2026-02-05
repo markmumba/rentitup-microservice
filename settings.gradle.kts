@@ -11,4 +11,6 @@ plugins {
 }
 
 rootProject.name = "backend"
-include("app", "list", "utilities","shared-libs")
+include(
+    "shared-libs",
+    "catalog-service")

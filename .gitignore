@@ -36,3 +36,5 @@ bin/
 
 # Misc
 HELP.md
+ARCHITECTURE.md
+.env

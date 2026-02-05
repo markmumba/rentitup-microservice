@@ -2,8 +2,8 @@ import com.google.protobuf.gradle.id
 
 plugins {
 	id("buildlogic.java-library-conventions")
-	id("io.spring.dependency-management") version "1.1.7"
-	id("com.google.protobuf") version "0.9.5"
+	id("io.spring.dependency-management")
+	id("com.google.protobuf")
 }
 
 group = "com.rentitup"

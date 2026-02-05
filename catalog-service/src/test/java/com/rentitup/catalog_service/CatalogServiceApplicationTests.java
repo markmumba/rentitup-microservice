@@ -1,10 +1,10 @@
-package com.rentitup.shared_libs;
+package com.rentitup.catalog_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SharedLibsApplicationTests {
+class CatalogServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
