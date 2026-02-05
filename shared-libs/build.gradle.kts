@@ -6,12 +6,13 @@ plugins {
 	id("com.google.protobuf")
 }
 
+
 group = "com.rentitup"
 version = "0.0.1-SNAPSHOT"
 description = "shared libs for the rentitup "
 
 
-extra["springGrpcVersion"] = "1.0.1"
+val springGrpcVersion = "1.0.2"
 
 dependencies {
 	implementation("io.grpc:grpc-services")
@@ -20,7 +21,7 @@ dependencies {
 
 dependencyManagement {
 	imports {
-		mavenBom("org.springframework.grpc:spring-grpc-dependencies:${property("springGrpcVersion")}")
+		mavenBom("org.springframework.grpc:spring-grpc-dependencies:$springGrpcVersion")
 	}
 }
 

@@ -13,5 +13,5 @@ dependencies {
 }
 
 application {
-    mainClass = "com.rentitup.catalog.CatalogServiceApplication"
+    mainClass = "com.rentitup.catalog_service.CatalogServiceApplication"
 }
