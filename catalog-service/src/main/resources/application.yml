@@ -21,10 +21,13 @@ spring:
     locations: classpath:db/migration
     schemas: catalog
     default-schema: catalog
+    baseline-on-migrate: true
 
-logging:
-  level:
-    org.flywaydb: DEBUG
-    org.springframework.boot.autoconfigure: DEBUG
 
-debug: true
+
+#logging:
+#  level:
+#    org.flywaydb: DEBUG
+#    org.springframework.boot.autoconfigure: DEBUG
+
+#debug: true

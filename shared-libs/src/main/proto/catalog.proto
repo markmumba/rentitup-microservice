@@ -304,7 +304,7 @@ message UpdateMachineRatingRequest {
   int32 total_reviews = 3;
 }
 
-service CatalogueService {
+service CatalogService {
 
   rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse);
   rpc GetCategory(GetCategoryRequest) returns (CategoryResponse);
