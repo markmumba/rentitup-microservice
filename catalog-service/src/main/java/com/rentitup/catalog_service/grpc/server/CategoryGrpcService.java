@@ -5,19 +5,15 @@ import com.rentitup.catalog_service.mapper.CatalogMapper;
 import com.rentitup.catalog_service.service.CategoryService;
 import com.rentitup.catalog_service.util.PaginationHelper;
 import com.rentitup.shared.proto.catalog.*;
-import com.rentitup.shared.proto.common.PaginationResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.grpc.server.service.GrpcService;
 
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @GrpcService
 @RequiredArgsConstructor
