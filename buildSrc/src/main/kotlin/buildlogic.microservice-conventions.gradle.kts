@@ -1,53 +1,41 @@
 /*
  * Convention plugin for Spring Boot microservices.
- * Provides: Spring Boot, Flyway, PostgreSQL, gRPC, Lombok
+ * Extends spring-boot-conventions with: Eureka Client, gRPC, Database (JPA, Flyway, PostgreSQL)
+ * Use this for microservices that register with Eureka and communicate via gRPC.
  */
 
 import com.google.protobuf.gradle.id
 
 plugins {
-    id("buildlogic.java-application-conventions")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
+    id("buildlogic.spring-boot-conventions")
     id("com.google.protobuf")
 }
 
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
-}
-
 val springGrpcVersion = "1.0.2"
-val mapstructVersion = "1.6.3"
+val springCloudVersion = "2025.1.0"
 
 dependencyManagement {
     imports {
         mavenBom("org.springframework.grpc:spring-grpc-dependencies:$springGrpcVersion")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
     }
 }
 
 dependencies {
+    // Eureka Client for service discovery
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+
+    // gRPC
     implementation("io.grpc:grpc-services")
     implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
 
     // Database & Migrations
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
-
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
-
-    implementation("org.mapstruct:mapstruct:$mapstructVersion")
-    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
-
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-
-
+    // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
     testImplementation("org.springframework.boot:spring-boot-starter-validation-test")

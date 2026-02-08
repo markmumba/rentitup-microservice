@@ -16,12 +16,24 @@ import java.time.Instant;
 )
 public interface CatalogMapper {
 
-	@Mapping(target="id", expression ="java(entity.getId().toString()")
-	@Mapping(target="machineCount", expression = "java(entity.getMachineCount)")
+	@Mapping(target = "id", expression = "java(entity.getId().toString())")
+	@Mapping(target = "machineCount", expression = "java(entity.getMachineCount())")
+	@Mapping(target = "mergeFrom", ignore = true)
+	@Mapping(target = "clearField", ignore = true)
+	@Mapping(target = "clearOneof", ignore = true)
+	@Mapping(target = "unknownFields", ignore = true)
+	@Mapping(target = "mergeUnknownFields", ignore = true)
+	@Mapping(target = "idBytes", ignore = true)
+	@Mapping(target = "nameBytes", ignore = true)
+	@Mapping(target = "descriptionBytes", ignore = true)
+	@Mapping(target = "iconUrlBytes", ignore = true)
+	@Mapping(target = "defaultPriceTypeValue", ignore = true)
+	@Mapping(target = "allFields", ignore = true)
 	Category toProto(CategoryEntity entity);
 
-	@Mapping(target = "id",ignore = true)
+	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
 	@Mapping(target = "machines", ignore = true)
 	CategoryEntity toEntity(CreateCategoryRequest request);
 

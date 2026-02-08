@@ -1,5 +1,5 @@
 plugins {
-    id("buildlogic.spring-service-conventions")
+    id("buildlogic.microservice-conventions")
 }
 
 group = "com.rentitup"
@@ -7,9 +7,7 @@ version = "0.0.1-SNAPSHOT"
 description = "Catalog service for Rentitup"
 
 dependencies {
-
     implementation(project(":shared-libs"))
-
 }
 
 application {
