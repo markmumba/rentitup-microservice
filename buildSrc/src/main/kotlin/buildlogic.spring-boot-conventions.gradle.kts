@@ -17,6 +17,8 @@ configurations {
 }
 
 val mapstructVersion = "1.6.3"
+val springCloudVersion = "2025.1.0"
+
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -30,4 +32,9 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+    }
 }

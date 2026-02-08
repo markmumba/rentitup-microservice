@@ -12,12 +12,10 @@ plugins {
 }
 
 val springGrpcVersion = "1.0.2"
-val springCloudVersion = "2025.1.0"
 
 dependencyManagement {
     imports {
         mavenBom("org.springframework.grpc:spring-grpc-dependencies:$springGrpcVersion")
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
     }
 }
 
