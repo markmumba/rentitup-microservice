@@ -14,4 +14,5 @@ rootProject.name = "backend"
 include(
     "shared-libs",
     "catalog-service",
-    "service-registry")
+    "service-registry",
+    "api-gateway")
