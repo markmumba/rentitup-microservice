@@ -1,7 +1,6 @@
 /*
  * Convention plugin for Spring Boot microservices.
  * Extends spring-boot-conventions with: Eureka Client, gRPC, Database (JPA, Flyway, PostgreSQL)
- * Use this for microservices that register with Eureka and communicate via gRPC.
  */
 
 import com.google.protobuf.gradle.id
@@ -20,12 +19,15 @@ dependencyManagement {
 }
 
 dependencies {
+    // Web server (Spring Boot 4.x uses webmvc naming)
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+
     // Eureka Client for service discovery
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
-    // gRPC
+    // gRPC (web-based starter for Spring Boot 4.x compatibility)
     implementation("io.grpc:grpc-services")
-    implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
+    implementation("org.springframework.grpc:spring-grpc-server-web-spring-boot-starter")
 
     // Database & Migrations
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -34,10 +36,9 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     // Testing
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.grpc:spring-grpc-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 protobuf {

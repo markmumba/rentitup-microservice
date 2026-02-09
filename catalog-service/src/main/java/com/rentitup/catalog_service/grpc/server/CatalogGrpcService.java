@@ -18,7 +18,7 @@ import java.util.UUID;
 @GrpcService
 @RequiredArgsConstructor
 @Slf4j
-public class CategoryGrpcService extends CatalogServiceGrpc.CatalogServiceImplBase {
+public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBase {
 	private final CategoryService categoryService;
 	private final CatalogMapper catalogMapper;
 

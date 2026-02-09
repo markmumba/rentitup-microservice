@@ -8,6 +8,6 @@ description = "Service registry for Rentitup (Eureka Server)"
 
 dependencies {
 	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-server")
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 }

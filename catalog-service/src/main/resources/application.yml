@@ -1,6 +1,10 @@
+
+server:
+  port: 8082
 spring:
   application:
     name: catalog-service
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -23,11 +27,11 @@ spring:
     default-schema: catalog
     baseline-on-migrate: true
 
-
-
-#logging:
-#  level:
-#    org.flywaydb: DEBUG
-#    org.springframework.boot.autoconfigure: DEBUG
-
-#debug: true
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
