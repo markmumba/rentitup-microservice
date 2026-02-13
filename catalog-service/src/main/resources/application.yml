@@ -26,9 +26,7 @@ spring:
     schemas: catalog
     default-schema: catalog
     baseline-on-migrate: true
-  grpc:
-    server:
-      port: 9091
+
 eureka:
   client:
     service-url:

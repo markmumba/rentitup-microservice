@@ -1,6 +1,5 @@
 package com.rentitup.api_gateway.grpc;
 
-import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.EurekaClient;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -26,20 +25,12 @@ public class GrpcChannelFactory {
 	}
 
 	public ManagedChannel createChannel(String serviceName) {
-		InstanceInfo instance = eurekaClient.getNextServerFromEureka(serviceName, false);
-		if  (instance == null) {
-			throw new IllegalStateException("No instance found for service: " + serviceName);
-		}
-		String grpcPortStr = instance.getMetadata().get("grpcPort");
-		int grpcPort = grpcPortStr != null ?Integer.parseInt(grpcPortStr) : 9000;
-
-		String  host = instance.getHostName();
-
-		log.info("Creating gRPC channel for {} at {}:{}", serviceName, host, grpcPort);
 		return ManagedChannelBuilder
-				.forAddress(host,grpcPort)
+				.forTarget("eureka:///" + serviceName)
+				.defaultLoadBalancingPolicy("round_robin")
 				.usePlaintext()
 				.build();
+
 	}
 	public void refreshChannel(String serviceName) {
 		ManagedChannel oldChannel = channels.remove(serviceName);

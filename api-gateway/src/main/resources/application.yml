@@ -6,7 +6,9 @@ spring:
     name: api-gateway
 eureka:
   client:
-    register-with-eureka: true
+    register-with-eureka: false
     service-url:
       defaultZone: http://localhost:8081/eureka
+    fetch-registry: true
+
 

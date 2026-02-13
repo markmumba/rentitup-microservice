@@ -8,6 +8,7 @@ description = "API Gateway for Rentitup"
 
 dependencies {
 	implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc")
+	implementation("com.google.protobuf:protobuf-java-util")
 	implementation(project(":shared-libs"))
 }
 

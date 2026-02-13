@@ -1,11 +1,7 @@
 package com.rentitup.api_gateway.controller;
 
 import com.rentitup.api_gateway.common.response.ResponseBuilder;
-import com.rentitup.api_gateway.dto.CategoryDto;
-import com.rentitup.api_gateway.dto.CreateCategoryRequestDto;
-import com.rentitup.api_gateway.grpc.GrpcChannelFactory;
 import com.rentitup.api_gateway.grpc.GrpcStubFactory;
-import com.rentitup.api_gateway.mapper.GatewayMapper;
 import com.rentitup.shared.proto.catalog.CategoryResponse;
 import com.rentitup.shared.proto.catalog.CreateCategoryRequest;
 import jakarta.validation.Valid;
@@ -23,16 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class CategoryController {
 	private final GrpcStubFactory grpcStubFactory;
-	private final GatewayMapper gatewayMapper;
 
 	@PostMapping
-	public ResponseEntity<?> createCategory( @Valid @RequestBody CreateCategoryRequestDto requestDto) {
-		log.info("REST : Create category request: {}", requestDto.getName());
-		CreateCategoryRequest grpcRequest = gatewayMapper.toCreateCategoryRequest(requestDto);
-		CategoryResponse grpcResponse = grpcStubFactory.getCatalogStub().createCategory(grpcRequest);
-		CategoryDto response = gatewayMapper.toCategoryDto(grpcResponse.getResponse());
+	public ResponseEntity<?> createCategory( @Valid @RequestBody CreateCategoryRequest request) {
+		log.info("REST : Create category request: {}", request.getName());
+		CategoryResponse response = grpcStubFactory.getCatalogStub().createCategory(request);
 		log.info("REST : Create category response: {}", response);
-		return ResponseBuilder.created("Category created successfully", response);
+		return ResponseBuilder.created("Category created successfully", response.getResponse());
 	}
 }
 

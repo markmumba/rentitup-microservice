@@ -1,5 +1,6 @@
 package com.rentitup.api_gateway.common.response;
 
+import com.rentitup.api_gateway.common.pagination.PaginationDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 

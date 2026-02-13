@@ -29,6 +29,8 @@ public interface CatalogMapper {
 	@Mapping(target = "iconUrlBytes", ignore = true)
 	@Mapping(target = "defaultPriceTypeValue", ignore = true)
 	@Mapping(target = "allFields", ignore = true)
+	@Mapping(target = "createdAt" , ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
 	Category toProto(CategoryEntity entity);
 
 	@Mapping(target = "id", ignore = true)

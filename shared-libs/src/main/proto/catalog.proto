@@ -38,6 +38,8 @@ message Category{
   string icon_url =4;
   PriceCalculationType default_price_type = 5;
   int32 machine_count=6;
+  rentitup.common.Timestamp created_at=7;
+  rentitup.common.Timestamp updated_at=8;
 }
 
 message MachineImage {

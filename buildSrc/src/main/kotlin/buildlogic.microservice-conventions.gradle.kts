@@ -11,6 +11,7 @@ plugins {
 }
 
 val springGrpcVersion = "1.0.2"
+val protobufVersion = "4.33.5"
 
 dependencyManagement {
     imports {
@@ -19,6 +20,12 @@ dependencyManagement {
 }
 
 dependencies {
+    // Protobuf version constraints
+    constraints {
+        implementation("com.google.protobuf:protobuf-java:$protobufVersion")
+        implementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
+    }
+
     // Web server (Spring Boot 4.x uses webmvc naming)
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
@@ -27,7 +34,8 @@ dependencies {
 
     // gRPC (web-based starter for Spring Boot 4.x compatibility)
     implementation("io.grpc:grpc-services")
-    implementation("org.springframework.grpc:spring-grpc-server-web-spring-boot-starter")
+    implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
+
 
     // Database & Migrations
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
