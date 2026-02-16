@@ -1,4 +1,4 @@
-package com.rentitup.api_gateway.grpc;
+package com.rentitup.bff.grpc.nameResolver;
 
 import com.netflix.discovery.EurekaClient;
 import io.grpc.NameResolver;

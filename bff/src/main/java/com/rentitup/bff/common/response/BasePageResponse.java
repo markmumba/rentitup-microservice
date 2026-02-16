@@ -1,8 +1,8 @@
-package com.rentitup.api_gateway.common.response;
+package com.rentitup.bff.common.response;
 
-import com.rentitup.api_gateway.common.pagination.PageDto;
-import com.rentitup.api_gateway.common.pagination.PaginationDto;
-import com.rentitup.api_gateway.common.pagination.PaginationMetadataDto;
+import com.rentitup.bff.common.pagination.PageDto;
+import com.rentitup.bff.common.pagination.PaginationDto;
+import com.rentitup.bff.common.pagination.PaginationMetadataDto;
 import org.springframework.http.HttpStatus;
 
 import java.time.Instant;

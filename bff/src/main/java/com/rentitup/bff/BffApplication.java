@@ -1,13 +1,13 @@
-package com.rentitup.api_gateway;
+package com.rentitup.bff;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ApiGatewayApplication {
+public class BffApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ApiGatewayApplication.class, args);
+		SpringApplication.run(BffApplication.class, args);
 	}
 
 }

@@ -4,7 +4,7 @@ plugins {
 
 group = "com.rentitup"
 version = "0.0.1-SNAPSHOT"
-description = "API Gateway for Rentitup"
+description = "Backend for Frontend (BFF) for Rentitup"
 
 dependencies {
 	implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc")
@@ -13,6 +13,6 @@ dependencies {
 }
 
 application {
-	mainClass = "com.rentitup.api_gateway.ApiGatewayApplication"
+	mainClass = "com.rentitup.bff.BffApplication"
 }
 

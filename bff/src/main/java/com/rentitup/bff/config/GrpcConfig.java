@@ -1,6 +1,7 @@
-package com.rentitup.api_gateway.grpc;
+package com.rentitup.bff.config;
 
 import com.netflix.discovery.EurekaClient;
+import com.rentitup.bff.grpc.nameResolver.EurekaNameResolverProvider;
 import io.grpc.NameResolverRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.rentitup.api_gateway.grpc;
+package com.rentitup.bff.grpc;
 
 import com.rentitup.shared.proto.catalog.CatalogServiceGrpc;
 import io.grpc.ManagedChannel;

@@ -15,4 +15,4 @@ include(
     "shared-libs",
     "catalog-service",
     "service-registry",
-    "api-gateway")
+    "bff")

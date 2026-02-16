@@ -1,4 +1,4 @@
-package com.rentitup.api_gateway.common.pagination;
+package com.rentitup.bff.common.pagination;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -40,7 +40,7 @@ message Category{
   int32 machine_count=6;
   rentitup.common.Timestamp created_at=7;
   rentitup.common.Timestamp updated_at=8;
-}
+ }
 
 message MachineImage {
   string id=1;

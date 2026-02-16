@@ -34,7 +34,10 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public CategoryEntity getCategoryById(UUID id) {
 		log.info("Retrieving category id={}", id);
-		return categoryRepository.getReferenceById(id);
+		return categoryRepository.findById(id).orElseThrow(
+				() -> new BadRequestException("Category not found with id=" + id)
+		);
+
 	}
 
 	@Override
@@ -73,10 +76,9 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public void deleteCategoryById(UUID id) {
 		log.info("Deleting category id={}", id);
-		CategoryEntity saved = categoryRepository.getReferenceById(id);
-		if (!saved.getMachines().isEmpty()) {
-			throw new BadRequestException("category has machines cannot be deleted");
-		}
+		CategoryEntity saved = categoryRepository.findById(id).orElseThrow(
+				() -> new BadRequestException("Category not found with id=" + id)
+		);
 		categoryRepository.delete(saved);
 	}
 }

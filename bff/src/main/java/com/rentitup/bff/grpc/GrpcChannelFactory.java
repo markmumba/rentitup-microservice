@@ -1,4 +1,4 @@
-package com.rentitup.api_gateway.grpc;
+package com.rentitup.bff.grpc;
 
 import com.netflix.discovery.EurekaClient;
 import io.grpc.ManagedChannel;
@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class GrpcChannelFactory {
 
-	private final EurekaClient eurekaClient;
 	private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
 
 	public ManagedChannel getChannel(String serviceName) {

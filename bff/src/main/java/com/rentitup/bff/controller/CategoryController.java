@@ -1,7 +1,7 @@
-package com.rentitup.api_gateway.controller;
+package com.rentitup.bff.controller;
 
-import com.rentitup.api_gateway.common.response.ResponseBuilder;
-import com.rentitup.api_gateway.grpc.GrpcStubFactory;
+import com.rentitup.bff.common.response.ResponseBuilder;
+import com.rentitup.bff.grpc.GrpcStubFactory;
 import com.rentitup.shared.proto.catalog.CategoryResponse;
 import com.rentitup.shared.proto.catalog.CreateCategoryRequest;
 import jakarta.validation.Valid;
