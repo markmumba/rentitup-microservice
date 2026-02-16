@@ -190,16 +190,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.and(MachineSpecification.hasMinCondition(
 							request.hasMinCondition() ? catalogMapper.map(request.getMinCondition()) : null));
 
-			Page<MachineEntity> page = machineService.findAll(spec, pageable);
-
-			ListMachinesResponse.Builder responseBuilder = ListMachinesResponse.newBuilder()
-					.setPagination(PaginationHelper.toProto(page));
-
-			page.getContent().forEach(machine ->
-					responseBuilder.addMachines(catalogMapper.toProto(machine)));
-
-			responseObserver.onNext(responseBuilder.build());
-			responseObserver.onCompleted();
+			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			log.error("Failed to list machines", ex);
 			responseObserver.onError(Status.INTERNAL
@@ -234,16 +225,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 							request.hasNearLocation() ? BigDecimal.valueOf(request.getNearLocation().getLongitude()) : null,
 							request.hasRadiusKm() ? request.getRadiusKm() : null));
 
-			Page<MachineEntity> page = machineService.findAll(spec, pageable);
-
-			ListMachinesResponse.Builder responseBuilder = ListMachinesResponse.newBuilder()
-					.setPagination(PaginationHelper.toProto(page));
-
-			page.getContent().forEach(machine ->
-					responseBuilder.addMachines(catalogMapper.toProto(machine)));
-
-			responseObserver.onNext(responseBuilder.build());
-			responseObserver.onCompleted();
+			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			log.error("Failed to search machines", ex);
 			responseObserver.onError(Status.INTERNAL
@@ -264,16 +246,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.and(MachineSpecification.hasStatus(
 							request.hasStatus() ? catalogMapper.map(request.getStatus()) : null));
 
-			Page<MachineEntity> page = machineService.findAll(spec, pageable);
-
-			ListMachinesResponse.Builder responseBuilder = ListMachinesResponse.newBuilder()
-					.setPagination(PaginationHelper.toProto(page));
-
-			page.getContent().forEach(machine ->
-					responseBuilder.addMachines(catalogMapper.toProto(machine)));
-
-			responseObserver.onNext(responseBuilder.build());
-			responseObserver.onCompleted();
+			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			log.error("Failed to get machines by owner", ex);
 			responseObserver.onError(Status.INTERNAL
@@ -295,16 +268,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.and(MachineSpecification.hasCategory(
 							request.hasCategoryId() ? UUID.fromString(request.getCategoryId()) : null));
 
-			Page<MachineEntity> page = machineService.findAll(spec, pageable);
-
-			ListMachinesResponse.Builder responseBuilder = ListMachinesResponse.newBuilder()
-					.setPagination(PaginationHelper.toProto(page));
-
-			page.getContent().forEach(machine ->
-					responseBuilder.addMachines(catalogMapper.toProto(machine)));
-
-			responseObserver.onNext(responseBuilder.build());
-			responseObserver.onCompleted();
+			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			log.error("Failed to get featured machines", ex);
 			responseObserver.onError(Status.INTERNAL
@@ -329,16 +293,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.and(MachineSpecification.hasCategory(
 							request.hasCategoryId() ? UUID.fromString(request.getCategoryId()) : null));
 
-			Page<MachineEntity> page = machineService.findAll(spec, pageable);
-
-			ListMachinesResponse.Builder responseBuilder = ListMachinesResponse.newBuilder()
-					.setPagination(PaginationHelper.toProto(page));
-
-			page.getContent().forEach(machine ->
-					responseBuilder.addMachines(catalogMapper.toProto(machine)));
-
-			responseObserver.onNext(responseBuilder.build());
-			responseObserver.onCompleted();
+			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			log.error("Failed to get nearby machines", ex);
 			responseObserver.onError(Status.INTERNAL
@@ -346,6 +301,19 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.withCause(ex)
 					.asRuntimeException());
 		}
+	}
+
+	private void getAllMachines(StreamObserver<ListMachinesResponse> responseObserver, Pageable pageable, Specification<MachineEntity> spec) {
+		Page<MachineEntity> page = machineService.findAll(spec, pageable);
+
+		ListMachinesResponse.Builder responseBuilder = ListMachinesResponse.newBuilder()
+				.setPagination(PaginationHelper.toProto(page));
+
+		page.getContent().forEach(machine ->
+				responseBuilder.addMachines(catalogMapper.toProto(machine)));
+
+		responseObserver.onNext(responseBuilder.build());
+		responseObserver.onCompleted();
 	}
 
 	@Override
