@@ -3,6 +3,7 @@ package com.rentitup.catalog_service.mapper;
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
+import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
 import com.rentitup.catalog_service.enums.MachineCondition;
 import com.rentitup.catalog_service.enums.MachineStatus;
 import com.rentitup.catalog_service.enums.PriceCalculationType;
@@ -14,6 +15,7 @@ import org.mapstruct.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -83,6 +85,24 @@ public interface CatalogMapper {
 		return Timestamp.newBuilder()
 				.setSeconds(instant.getEpochSecond())
 				.setNanos(instant.getNano())
+				.build();
+	}
+
+	default LocalDate mapProtoDate(com.rentitup.shared.proto.common.Date date) {
+		if (date == null || (date.getYear() == 0 && date.getMonth() == 0 && date.getDay() == 0)) {
+			return null;
+		}
+		return LocalDate.of(date.getYear(), date.getMonth(), date.getDay());
+	}
+
+	default com.rentitup.shared.proto.common.Date mapLocalDate(LocalDate date) {
+		if (date == null) {
+			return com.rentitup.shared.proto.common.Date.getDefaultInstance();
+		}
+		return com.rentitup.shared.proto.common.Date.newBuilder()
+				.setYear(date.getYear())
+				.setMonth(date.getMonthValue())
+				.setDay(date.getDayOfMonth())
 				.build();
 	}
 
@@ -232,6 +252,43 @@ public interface CatalogMapper {
 		return builder.build();
 	}
 
+	default MaintenanceRecordEntity toEntity(AddMaintenanceRecordRequest request){
+		if (request == null) return null;
+		MaintenanceRecordEntity.MaintenanceRecordEntityBuilder builder = MaintenanceRecordEntity.builder()
+				.serviceDate(mapProtoDate(request.getServiceDate()))
+				.performedBy(request.getPerformedBy())
+				.description(request.getDescription());
+
+		if (request.hasNextServiceDate()) {
+			builder.nextServiceDate(mapProtoDate(request.getNextServiceDate()));
+		}
+
+		return builder.build();
+	}
+
+	default MaintenanceRecord toProto(MaintenanceRecordEntity entity){
+		if (entity == null) return null;
+
+		MaintenanceRecord.Builder builder = MaintenanceRecord.newBuilder()
+				.setId(entity.getId().toString())
+				.setMachineId(entity.getMachine().getId().toString())
+				.setServiceDate(mapLocalDate(entity.getServiceDate()));
+
+		if (entity.getDescription() != null) {
+			builder.setDescription(entity.getDescription());
+		}
+		if (entity.getPerformedBy() != null) {
+			builder.setPerformedBy(entity.getPerformedBy());
+		}
+		if (entity.getNextServiceDate() != null) {
+			builder.setNextServiceDate(mapLocalDate(entity.getNextServiceDate()));
+		}
+		if (entity.getCreatedAt() != null) {
+			builder.setCreatedAt(mapLocalDateTime(entity.getCreatedAt()));
+		}
+
+		return builder.build();
+	}
 	// ==================== MachineStatus Mappings ====================
 
 	default MachineStatus map(com.rentitup.shared.proto.catalog.MachineStatus status) {

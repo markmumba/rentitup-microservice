@@ -3,8 +3,10 @@ package com.rentitup.catalog_service.service.Impl;
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
+import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
+import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
 import com.rentitup.catalog_service.service.MachineService;
 import com.rentitup.shared_libs.exceptions.BadRequestException;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +17,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,7 @@ public class MachineServiceImpl implements MachineService {
 
 	private final CategoryRepository categoryRepository;
 	private final MachineRepository machineRepository;
+	private final MaintenanceRecordRepository maintenanceRecordRepository;
 
 	@Override
 	@Transactional
@@ -172,4 +178,31 @@ public class MachineServiceImpl implements MachineService {
 
 		return machineRepository.save(machine);
 	}
+
+	@Override
+	public MaintenanceRecordEntity createMaintenanceRecord(MaintenanceRecordEntity maintenanceRecord,UUID machineId) {
+		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
+				() -> new BadRequestException("Machine not found: " + machineId)
+		);
+		maintenanceRecord.setMachine(machine);
+		return maintenanceRecordRepository.save(maintenanceRecord);
+	}
+
+	@Override
+	public Page<MaintenanceRecordEntity> getMaintenanceHistory(UUID machineId, Pageable pageable) {
+		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
+				() -> new BadRequestException("Machine not found: " + machineId)
+		);
+		Page<MaintenanceRecordEntity> records = maintenanceRecordRepository.findAllByMachine(machine,pageable);
+		return records;
+	}
+
+	@Override
+	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId,int daysAhead ,Pageable pageable) {
+		//TODO check if owner exists
+		LocalDate now = LocalDate.now();
+		LocalDate cutoffDate = now.plusDays(daysAhead);
+		return maintenanceRecordRepository.findUpcomingByOwnerId(ownerId,now,cutoffDate,pageable);
+	}
+
 }

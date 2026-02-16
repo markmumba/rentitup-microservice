@@ -2,6 +2,7 @@ package com.rentitup.catalog_service.grpc.server;
 
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
+import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
 import com.rentitup.catalog_service.mapper.CatalogMapper;
 import com.rentitup.catalog_service.service.CategoryService;
 import com.rentitup.catalog_service.service.MachineService;
@@ -433,4 +434,93 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 				.asRuntimeException());
 		}
 	}
+
+	@Override
+	public void addMaintenanceRecord(AddMaintenanceRecordRequest request, StreamObserver<MaintenanceRecordResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			MaintenanceRecordEntity maintenanceRecord = catalogMapper.toEntity(request);
+			MaintenanceRecordEntity savedMaintenanceRecord = machineService.createMaintenanceRecord(maintenanceRecord, machineId);
+			MaintenanceRecordResponse response = MaintenanceRecordResponse.newBuilder()
+					.setRecord(catalogMapper.toProto(savedMaintenanceRecord))
+					.build();
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to add maintenance record", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to add maintenance record")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getMaintenanceHistory(GetMaintenanceHistoryRequest request, StreamObserver<MaintenanceHistoryResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
+
+			Page<MaintenanceRecordEntity> page = machineService.getMaintenanceHistory(machineId, pageable);
+
+			MaintenanceHistoryResponse.Builder responseBuilder = MaintenanceHistoryResponse.newBuilder()
+					.setPagination(PaginationHelper.toProto(page));
+
+			page.getContent().forEach(record ->
+					responseBuilder.addRecords(catalogMapper.toProto(record)));
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to get maintenance history", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to get maintenance history")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getUpcomingMaintenance(GetUpcomingMaintenanceRequest request, StreamObserver<MaintenanceHistoryResponse> responseObserver) {
+		try {
+			UUID ownerId = UUID.fromString(request.getOwnerId());
+			int daysAhead = request.getDaysAhead() > 0 ? request.getDaysAhead() : 30;
+
+			// Default pagination since the request doesn't include it
+			Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.ASC, "nextServiceDate"));
+
+			Page<MaintenanceRecordEntity> page = machineService.getUpcomingMaintenances(ownerId, daysAhead, pageable);
+
+			MaintenanceHistoryResponse.Builder responseBuilder = MaintenanceHistoryResponse.newBuilder()
+					.setPagination(PaginationHelper.toProto(page));
+
+			page.getContent().forEach(record ->
+					responseBuilder.addRecords(catalogMapper.toProto(record)));
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid owner ID: {}", request.getOwnerId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid owner ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to get upcoming maintenance", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to get upcoming maintenance")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
 }
