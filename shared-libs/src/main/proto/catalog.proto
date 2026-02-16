@@ -237,6 +237,19 @@ message AddMachineImageRequest {
   bool is_primary = 3;
 }
 
+message GetUploadUrlRequest {
+  string machine_id = 1;
+  string filename = 2;
+  string content_type = 3;  // e.g., "image/jpeg", "image/png"
+}
+
+message GetUploadUrlResponse {
+  string upload_url = 1;      // pre-signed PUT URL
+  string object_key = 2;      // the key to use when calling AddMachineImage
+  string public_url = 3;      // the final public URL after upload
+  int64 expires_in_seconds = 4;
+}
+
 message RemoveMachineImageRequest {
   string machine_id = 1;
   string image_id = 2;
@@ -324,6 +337,7 @@ service CatalogService {
   rpc GetFeaturedMachines(GetFeaturedMachinesRequest) returns (ListMachinesResponse);
   rpc GetNearbyMachines(GetNearbyMachinesRequest) returns (ListMachinesResponse);
 
+  rpc GetUploadUrl (GetUploadUrlRequest) returns (GetUploadUrlResponse);
   rpc AddMachineImage (AddMachineImageRequest) returns (MachineResponse);
   rpc RemoveMachineImage (RemoveMachineImageRequest) returns (MachineResponse);
   rpc SetPrimaryImage (SetPrimaryImageRequest) returns (MachineResponse);

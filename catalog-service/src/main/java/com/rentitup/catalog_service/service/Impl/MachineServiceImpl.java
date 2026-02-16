@@ -2,6 +2,7 @@ package com.rentitup.catalog_service.service.Impl;
 
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
+import com.rentitup.catalog_service.entities.MachineImageEntity;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.service.MachineService;
@@ -109,5 +110,66 @@ public class MachineServiceImpl implements MachineService {
 	@Transactional(readOnly = true)
 	public List<MachineEntity> findAllByIds(List<UUID> ids) {
 		return machineRepository.findAllById(ids);
+	}
+
+	@Override
+	@Transactional
+	public MachineEntity addImage(UUID machineId, String url, boolean isPrimary) {
+		MachineEntity machine = getMachine(machineId);
+
+		// If this is the primary image, unset any existing primary
+		if (isPrimary) {
+			machine.getImages().forEach(img -> img.setPrimary(false));
+		}
+
+		int nextOrder = machine.getImages().stream()
+			.mapToInt(MachineImageEntity::getDisplayOrder)
+			.max()
+			.orElse(-1) + 1;
+
+		MachineImageEntity image = MachineImageEntity.builder()
+			.url(url)
+			.primary(isPrimary)
+			.displayOrder(nextOrder)
+			.build();
+
+		machine.addImage(image);
+		return machineRepository.save(machine);
+	}
+
+	@Override
+	@Transactional
+	public MachineEntity removeImage(UUID machineId, UUID imageId) {
+		MachineEntity machine = getMachine(machineId);
+
+		MachineImageEntity imageToRemove = machine.getImages().stream()
+			.filter(img -> img.getId().equals(imageId))
+			.findFirst()
+			.orElseThrow(() -> new BadRequestException("Image not found: " + imageId));
+
+		boolean wasPrimary = imageToRemove.isPrimary();
+		machine.removeImage(imageToRemove);
+
+		if (wasPrimary && !machine.getImages().isEmpty()) {
+			machine.getImages().get(0).setPrimary(true);
+		}
+
+		return machineRepository.save(machine);
+	}
+
+	@Override
+	@Transactional
+	public MachineEntity setPrimaryImage(UUID machineId, UUID imageId) {
+		MachineEntity machine = getMachine(machineId);
+
+		MachineImageEntity newPrimary = machine.getImages().stream()
+			.filter(img -> img.getId().equals(imageId))
+			.findFirst()
+			.orElseThrow(() -> new BadRequestException("Image not found: " + imageId));
+
+		machine.getImages().forEach(img -> img.setPrimary(false));
+		newPrimary.setPrimary(true);
+
+		return machineRepository.save(machine);
 	}
 }

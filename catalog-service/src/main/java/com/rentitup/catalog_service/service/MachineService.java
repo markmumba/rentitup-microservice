@@ -13,10 +13,9 @@ public interface MachineService {
 	MachineEntity getMachine(UUID id);
 	MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId);
 	String deleteMachine(UUID id);
-
-	// Single generic query method - specification built by gRPC layer
 	Page<MachineEntity> findAll(Specification<MachineEntity> spec, Pageable pageable);
-
-	// Batch fetch for inter-service calls
 	List<MachineEntity> findAllByIds(List<UUID> ids);
+	MachineEntity addImage(UUID machineId, String url, boolean isPrimary);
+	MachineEntity removeImage(UUID machineId, UUID imageId);
+	MachineEntity setPrimaryImage(UUID machineId, UUID imageId);
 }

@@ -36,3 +36,11 @@ eureka:
   instance:
     metadata-map:
       grpc-port: 9091
+
+storage:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:rentitup-images}
+  region: ${MINIO_REGION:us-east-1}
+  upload-url-expiration-seconds: 3600

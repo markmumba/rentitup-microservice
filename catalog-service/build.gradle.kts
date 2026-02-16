@@ -8,6 +8,10 @@ description = "Catalog service for Rentitup"
 
 dependencies {
     implementation(project(":shared-libs"))
+
+    // AWS S3 SDK (works with MinIO)
+    implementation(platform("software.amazon.awssdk:bom:2.29.51"))
+    implementation("software.amazon.awssdk:s3")
 }
 
 application {

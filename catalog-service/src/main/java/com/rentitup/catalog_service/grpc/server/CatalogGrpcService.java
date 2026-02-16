@@ -5,6 +5,7 @@ import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.mapper.CatalogMapper;
 import com.rentitup.catalog_service.service.CategoryService;
 import com.rentitup.catalog_service.service.MachineService;
+import com.rentitup.catalog_service.service.StorageService;
 import com.rentitup.catalog_service.specification.MachineSpecification;
 import com.rentitup.catalog_service.util.PaginationHelper;
 import com.rentitup.shared.proto.catalog.*;
@@ -29,6 +30,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	private final CategoryService categoryService;
 	private final MachineService machineService;
 	private final CatalogMapper catalogMapper;
+	private final StorageService storageService;
 
 	@Override
 	public void createCategory(CreateCategoryRequest request, StreamObserver<CategoryResponse> responseObserver) {
@@ -343,6 +345,124 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.withDescription("Failed to get nearby machines")
 					.withCause(ex)
 					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getUploadUrl(GetUploadUrlRequest request, StreamObserver<GetUploadUrlResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+
+			// Verify machine exists
+			machineService.getMachine(machineId);
+
+			StorageService.UploadUrlResult result = storageService.generateUploadUrl(
+				machineId,
+				request.getFilename(),
+				request.getContentType()
+			);
+
+			GetUploadUrlResponse response = GetUploadUrlResponse.newBuilder()
+				.setUploadUrl(result.uploadUrl())
+				.setObjectKey(result.objectKey())
+				.setPublicUrl(result.publicUrl())
+				.setExpiresInSeconds(result.expiresInSeconds())
+				.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+				.withDescription("Invalid machine ID")
+				.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to generate upload URL", ex);
+			responseObserver.onError(Status.INTERNAL
+				.withDescription("Failed to generate upload URL")
+				.withCause(ex)
+				.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void addMachineImage(AddMachineImageRequest request, StreamObserver<MachineResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			MachineEntity machine = machineService.addImage(
+				machineId,
+				request.getUrl(),
+				request.getIsPrimary()
+			);
+
+			MachineResponse response = MachineResponse.newBuilder()
+				.setMachine(catalogMapper.toProto(machine))
+				.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception ex) {
+			log.error("Failed to add machine image", ex);
+			responseObserver.onError(Status.INTERNAL
+				.withDescription("Failed to add machine image")
+				.withCause(ex)
+				.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void removeMachineImage(RemoveMachineImageRequest request, StreamObserver<MachineResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			UUID imageId = UUID.fromString(request.getImageId());
+
+			MachineEntity machine = machineService.removeImage(machineId, imageId);
+
+			MachineResponse response = MachineResponse.newBuilder()
+				.setMachine(catalogMapper.toProto(machine))
+				.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid ID format", ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+				.withDescription("Invalid machine ID or image ID format")
+				.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to remove machine image", ex);
+			responseObserver.onError(Status.INTERNAL
+				.withDescription("Failed to remove machine image")
+				.withCause(ex)
+				.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void setPrimaryImage(SetPrimaryImageRequest request, StreamObserver<MachineResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			UUID imageId = UUID.fromString(request.getImageId());
+
+			MachineEntity machine = machineService.setPrimaryImage(machineId, imageId);
+
+			MachineResponse response = MachineResponse.newBuilder()
+				.setMachine(catalogMapper.toProto(machine))
+				.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid ID format", ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+				.withDescription("Invalid machine ID or image ID format")
+				.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to set primary image", ex);
+			responseObserver.onError(Status.INTERNAL
+				.withDescription("Failed to set primary image")
+				.withCause(ex)
+				.asRuntimeException());
 		}
 	}
 }

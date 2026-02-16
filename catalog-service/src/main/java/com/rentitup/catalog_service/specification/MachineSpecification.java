@@ -40,8 +40,6 @@ public class MachineSpecification {
 	public static Specification<MachineEntity> hasMinCondition(MachineCondition minCondition) {
 		return (root, query, cb) -> {
 			if (minCondition == null) return cb.conjunction();
-			// Condition enum: EXCELLENT < GOOD < FAIR (ordinal order)
-			// We want machines with condition <= minCondition (better or equal)
 			return cb.lessThanOrEqualTo(root.get("condition"), minCondition);
 		};
 	}
