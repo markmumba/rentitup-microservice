@@ -1,0 +1,51 @@
+services:
+  postgres:
+    container_name: machine_app
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${DB_PORT}:5432'
+    restart:
+      unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    container_name: minio
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - '9000:9000'   # API
+      - '9001:9001'   # Console UI
+    restart: unless-stopped
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Creates the bucket on startup
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ACCESS_KEY:-minioadmin} $${MINIO_SECRET_KEY:-minioadmin};
+      mc mb local/$${MINIO_BUCKET:-rentitup-images} --ignore-existing;
+      mc anonymous set download local/$${MINIO_BUCKET:-rentitup-images};
+      exit 0;
+      "
+
+volumes:
+  postgres_data:
+  minio_data:

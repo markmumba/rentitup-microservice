@@ -36,3 +36,6 @@ bin/
 
 # Misc
 HELP.md
+ARCHITECTURE.md
+.env
+catalog-service/.env
