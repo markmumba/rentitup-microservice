@@ -15,4 +15,5 @@ include(
     "shared-libs",
     "catalog-service",
     "service-registry",
+    "user-service",
     "bff")
