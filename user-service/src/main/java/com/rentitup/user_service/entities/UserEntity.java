@@ -22,21 +22,22 @@ public class UserEntity extends BaseEntity {
 	@Column(nullable = false, unique = true)
 	private String email;
 
-	@Column(name = "password_hash")
+	@Column(name = "password_hash", nullable = false)
 	private String password;
 
-	@Column(name = "full_name")
+	@Column(name = "full_name",nullable = false)
 	private String fullName;
 
 	private String phone;
 
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
+	@Column(name="role",nullable = false)
 	private ERole role = ERole.CUSTOMER;
 
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
-	@Column(name = "kyc_status")
+	@Column(name = "kyc_status", nullable = false)
 	private KycStatus kycStatus = KycStatus.PENDING;
 
 	@Column(name = "business_license")

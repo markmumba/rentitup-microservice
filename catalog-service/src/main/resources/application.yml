@@ -1,6 +1,7 @@
 
 server:
-  port: 8082
+  port: 8083
+
 spring:
   application:
     name: catalog-service
@@ -26,6 +27,9 @@ spring:
     schemas: catalog
     default-schema: catalog
     baseline-on-migrate: true
+  grpc:
+    server:
+      port: 9092
 
 eureka:
   client:
@@ -35,7 +39,7 @@ eureka:
     register-with-eureka: true
   instance:
     metadata-map:
-      grpc-port: 9091
+      grpc-port: 9092
 
 storage:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

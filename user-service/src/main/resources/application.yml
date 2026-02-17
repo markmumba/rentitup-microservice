@@ -1,4 +1,8 @@
 
+server:
+  port: 8082
+
+
 spring:
   application:
     name: user-service
@@ -24,6 +28,9 @@ spring:
     schemas: users
     default-schema: users
     baseline-on-migrate: true
+  grpc:
+    server:
+      port: 9091
 
 
 eureka:
