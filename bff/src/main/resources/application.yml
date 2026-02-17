@@ -19,3 +19,6 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:your-256-bit-secret-key-here-must-be-at-least-32-chars}

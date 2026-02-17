@@ -10,6 +10,7 @@ description = "microservice for user data "
 
 dependencies {
 	implementation(project(":shared-libs"))
+	implementation("org.springframework.security:spring-security-crypto")
 }
 
 application {

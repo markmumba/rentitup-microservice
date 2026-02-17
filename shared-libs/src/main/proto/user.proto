@@ -31,8 +31,45 @@ message User {
   rentitup.common.Timestamp created_at=7;
   rentitup.common.Timestamp verified_at=8;
   rentitup.common.Timestamp updated_at =9;
+  string profile_image_url = 10;
 }
 
+// ==================== Authentication ====================
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string full_name = 3;
+  string phone = 4;
+  UserType user_type = 5;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ==================== User Management ====================
 
 message CreateUserRequest {
   string email = 1;
@@ -78,11 +115,18 @@ message ListUsersResponse {
 }
 
 service UserService {
+  // Authentication
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // User Management
   rpc CreateUser(CreateUserRequest) returns (UserResponse);
   rpc GetUser (GetUserRequest) returns(UserResponse);
   rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
   rpc UpdateUser (UpdateUserRequest) returns (UserResponse);
   rpc VerifyUser(VerifyUserRequest) returns (UserResponse);
-  rpc ListUserResponse (ListUserRequest) returns (ListUsersResponse);
+  rpc ListUsers (ListUserRequest) returns (ListUsersResponse);
 }
 

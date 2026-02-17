@@ -42,3 +42,9 @@ eureka:
   instance:
     metadata-map:
       grpc-port: 9091
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:your-256-bit-secret-key-here-must-be-at-least-32-chars}
+  access-token-expiration: 3600000   # 1 hour
+  refresh-token-expiration: 604800000 # 7 days
+  issuer: rentitup
