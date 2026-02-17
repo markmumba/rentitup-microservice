@@ -9,5 +9,12 @@ description = "microservice for user data "
 
 
 dependencies {
+	implementation(project(":shared-libs"))
 }
+
+application {
+	mainClass = "com.rentitup.user_service.UserServiceApplication"
+}
+
+
 

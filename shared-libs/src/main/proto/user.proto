@@ -2,7 +2,7 @@ syntax="proto3";
 package  rentitup.user;
 
 option java_multiple_files=true;
-option java_package="rentitup.shared.proto.user";
+option java_package="com.rentitup.shared.proto.user";
 option java_outer_classname="UserProto";
 
 import "common.proto";
@@ -77,7 +77,7 @@ message ListUsersResponse {
   rentitup.common.PaginationResponse pagination =2;
 }
 
-service UserServices {
+service UserService {
   rpc CreateUser(CreateUserRequest) returns (UserResponse);
   rpc GetUser (GetUserRequest) returns(UserResponse);
   rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
