@@ -7,9 +7,10 @@ version = "0.0.1-SNAPSHOT"
 description = "Backend for Frontend (BFF) for Rentitup"
 
 dependencies {
-	implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc")
 	implementation("com.google.protobuf:protobuf-java-util")
 	implementation(project(":shared-libs"))
+
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 }
 
 application {

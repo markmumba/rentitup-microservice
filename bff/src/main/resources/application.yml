@@ -1,9 +1,10 @@
-
 server:
   port: 8080
+
 spring:
   application:
     name: bff
+
 eureka:
   client:
     register-with-eureka: false
@@ -11,4 +12,10 @@ eureka:
       defaultZone: http://localhost:8081/eureka
     fetch-registry: true
 
-
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
