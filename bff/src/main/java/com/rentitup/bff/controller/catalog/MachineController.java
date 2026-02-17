@@ -4,7 +4,6 @@ import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.bff.grpc.GrpcStubFactory;
 import com.rentitup.shared.proto.catalog.*;
-import com.rentitup.shared.proto.common.Date;
 import com.rentitup.shared.proto.common.Location;
 import com.rentitup.shared.proto.common.Money;
 import com.rentitup.shared.proto.common.PaginationRequest;
