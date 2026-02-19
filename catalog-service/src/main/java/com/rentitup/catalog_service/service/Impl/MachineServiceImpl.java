@@ -4,6 +4,7 @@ import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
 import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
+import com.rentitup.catalog_service.grpc.client.UserGrpcClient;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
@@ -18,10 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +30,7 @@ public class MachineServiceImpl implements MachineService {
 	private final CategoryRepository categoryRepository;
 	private final MachineRepository machineRepository;
 	private final MaintenanceRecordRepository maintenanceRecordRepository;
+	private final UserGrpcClient userGrpcClient;
 
 	@Override
 	@Transactional
@@ -38,6 +38,11 @@ public class MachineServiceImpl implements MachineService {
 		CategoryEntity category = categoryRepository.findById(categoryId).orElseThrow(
 				() -> new BadRequestException("Category not found: " + categoryId)
 		);
+
+		if (!userGrpcClient.userExists(machine.getOwnerId())) {
+			throw new BadRequestException("Owner not found: " + machine.getOwnerId());
+		}
+
 		machine.setCategory(category);
 		return machineRepository.save(machine);
 	}
@@ -198,11 +203,13 @@ public class MachineServiceImpl implements MachineService {
 	}
 
 	@Override
-	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId,int daysAhead ,Pageable pageable) {
-		//TODO check if owner exists
+	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId, int daysAhead, Pageable pageable) {
+		if (!userGrpcClient.userExists(ownerId)) {
+			throw new BadRequestException("Owner not found: " + ownerId);
+		}
 		LocalDate now = LocalDate.now();
 		LocalDate cutoffDate = now.plusDays(daysAhead);
-		return maintenanceRecordRepository.findUpcomingByOwnerId(ownerId,now,cutoffDate,pageable);
+		return maintenanceRecordRepository.findUpcomingByOwnerId(ownerId, now, cutoffDate, pageable);
 	}
 
 }

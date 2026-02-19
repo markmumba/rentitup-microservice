@@ -2,8 +2,8 @@ package com.rentitup.bff.controller.user;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
-import com.rentitup.bff.grpc.GrpcStubFactory;
-import com.rentitup.bff.security.UserContext;
+import com.rentitup.bff.grpc.GrpcClientFactory;
+import com.rentitup.bff.security.JwtAuthentication;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.user.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +12,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,57 +24,53 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users", description = "User management endpoints")
 public class UserController {
 
-	private final GrpcStubFactory grpcStubFactory;
+	private final GrpcClientFactory grpcClient;
 
 	@Operation(summary = "Get current user profile", description = "Returns the profile of the authenticated user")
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser() {
-		UserContext context = UserContext.get();
-		if (context == null) {
-			return ResponseBuilder.unauthorized("Not authenticated");
-		}
+		JwtAuthentication auth = getAuthentication();
 
-		log.info("REST: Get current user: {}", context.getUserId());
+		log.info("REST: Get current user: {}", auth.getUserId());
 		GetUserRequest request = GetUserRequest.newBuilder()
-				.setId(context.getUserId().toString())
+				.setId(auth.getUserId().toString())
 				.build();
-		UserResponse response = grpcStubFactory.getUserStub().getUser(request);
+		UserResponse response = grpcClient.getUserClient().getUser(request);
 		return ResponseBuilder.success("User retrieved", response.getUser());
 	}
 
 	@Operation(summary = "Update current user profile", description = "Updates the profile of the authenticated user")
 	@PutMapping("/me")
 	public ResponseEntity<?> updateCurrentUser(@RequestBody UpdateUserRequest request) {
-		UserContext context = UserContext.get();
-		if (context == null) {
-			return ResponseBuilder.unauthorized("Not authenticated");
-		}
+		JwtAuthentication auth = getAuthentication();
 
-		log.info("REST: Update current user: {}", context.getUserId());
+		log.info("REST: Update current user: {}", auth.getUserId());
 		UpdateUserRequest.Builder builder = UpdateUserRequest.newBuilder()
-				.setId(context.getUserId().toString());
+				.setId(auth.getUserId().toString());
 
 		if (request.hasFullname()) builder.setFullname(request.getFullname());
 		if (request.hasPhone()) builder.setPhone(request.getPhone());
 		if (request.hasBusinessLicense()) builder.setBusinessLicense(request.getBusinessLicense());
 
-		UserResponse response = grpcStubFactory.getUserStub().updateUser(builder.build());
+		UserResponse response = grpcClient.getUserClient().updateUser(builder.build());
 		return ResponseBuilder.success("User updated", response.getUser());
 	}
 
 	@Operation(summary = "Get user by ID", description = "Returns a user by their ID (admin only)")
 	@GetMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<?> getUser(@Parameter(description = "User ID") @PathVariable String id) {
 		log.info("REST: Get user: {}", id);
 		GetUserRequest request = GetUserRequest.newBuilder()
 				.setId(id)
 				.build();
-		UserResponse response = grpcStubFactory.getUserStub().getUser(request);
+		UserResponse response = grpcClient.getUserClient().getUser(request);
 		return ResponseBuilder.success("User retrieved", response.getUser());
 	}
 
 	@Operation(summary = "List users", description = "Returns a paginated list of users (admin only)")
 	@GetMapping
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<?> listUsers(
 			@Parameter(description = "Page number (1-based)") @RequestParam(defaultValue = "1") int page,
 			@Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
@@ -88,7 +87,7 @@ public class UserController {
 		if (userType != null) builder.setUserType(userType);
 		if (kycStatus != null) builder.setKyStatus(kycStatus);
 
-		ListUsersResponse response = grpcStubFactory.getUserStub().listUsers(builder.build());
+		ListUsersResponse response = grpcClient.getUserClient().listUsers(builder.build());
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())
@@ -104,6 +103,7 @@ public class UserController {
 
 	@Operation(summary = "Verify user KYC", description = "Updates a user's KYC verification status (admin only)")
 	@PostMapping("/{id}/verify")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<?> verifyUser(
 			@Parameter(description = "User ID") @PathVariable String id,
 			@RequestBody VerifyUserRequest request) {
@@ -114,7 +114,12 @@ public class UserController {
 				.setKycStatus(request.getKycStatus())
 				.build();
 
-		UserResponse response = grpcStubFactory.getUserStub().verifyUser(grpcRequest);
+		UserResponse response = grpcClient.getUserClient().verifyUser(grpcRequest);
 		return ResponseBuilder.success("User verification updated", response.getUser());
+	}
+
+	private JwtAuthentication getAuthentication() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		return (JwtAuthentication) auth;
 	}
 }

@@ -1,5 +1,4 @@
-package com.rentitup.bff.grpc.nameResolver;
-
+package com.rentitup.shared_libs.grpc;
 
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.EurekaClient;
@@ -32,11 +31,11 @@ public class EurekaNameResolver extends NameResolver {
 	public void start(Listener2 listener) {
 		this.listener = listener;
 		resolver();
-		scheduler.scheduleAtFixedRate(this::resolver,10,10, TimeUnit.SECONDS);
+		scheduler.scheduleAtFixedRate(this::resolver, 10, 10, TimeUnit.SECONDS);
 	}
 
 	private void resolver() {
-		List<InstanceInfo>  instances = eurekaClient.getInstancesByVipAddress(serviceName,false);
+		List<InstanceInfo> instances = eurekaClient.getInstancesByVipAddress(serviceName, false);
 
 		List<EquivalentAddressGroup> addressGroups = instances.stream()
 				.map(instance -> {
@@ -45,7 +44,7 @@ public class EurekaNameResolver extends NameResolver {
 							instance.getMetadata().getOrDefault("grpc-port", "9000")
 					);
 					return new EquivalentAddressGroup(
-							new InetSocketAddress(host,port)
+							new InetSocketAddress(host, port)
 					);
 				})
 				.toList();
