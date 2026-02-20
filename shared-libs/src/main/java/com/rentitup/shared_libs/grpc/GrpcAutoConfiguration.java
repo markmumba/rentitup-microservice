@@ -25,10 +25,7 @@ public class GrpcAutoConfiguration {
 		return new EurekaNameResolverRegistrar(eurekaClient);
 	}
 
-	/**
-	 * Registers the Eureka name resolver with gRPC.
-	 * Separated into its own class to handle the @PostConstruct lifecycle.
-	 */
+
 	public static class EurekaNameResolverRegistrar {
 
 		private final EurekaClient eurekaClient;

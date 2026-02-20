@@ -128,7 +128,6 @@ public class MachineServiceImpl implements MachineService {
 	public MachineEntity addImage(UUID machineId, String url, boolean isPrimary) {
 		MachineEntity machine = getMachine(machineId);
 
-		// If this is the primary image, unset any existing primary
 		if (isPrimary) {
 			machine.getImages().forEach(img -> img.setPrimary(false));
 		}

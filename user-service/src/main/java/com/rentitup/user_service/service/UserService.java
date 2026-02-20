@@ -10,9 +10,6 @@ import java.util.UUID;
 
 public interface UserService {
 
-	UserEntity register(String email, String password, String fullName, String phone, ERole role);
-	UserEntity authenticate(String email, String password);
-
 	UserEntity createUser(UserEntity user);
 	UserEntity getUserById(UUID id);
 	UserEntity getUserByEmail(String email);

@@ -1,5 +1,7 @@
 package com.rentitup.bff.config;
 
+import com.rentitup.bff.security.CustomAccessDeniedHandler;
+import com.rentitup.bff.security.CustomAuthenticationEntryPoint;
 import com.rentitup.bff.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+	private final CustomAccessDeniedHandler accessDeniedHandler;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -26,8 +30,11 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.exceptionHandling(exception -> exception
+						.authenticationEntryPoint(authenticationEntryPoint)
+						.accessDeniedHandler(accessDeniedHandler)
+				)
 				.authorizeHttpRequests(auth -> auth
-						// Public endpoints
 						.requestMatchers(
 								"/api/v1/auth/**",
 								"/api-docs/**",
@@ -37,7 +44,6 @@ public class SecurityConfig {
 								"/v3/api-docs/**",
 								"/actuator/**"
 						).permitAll()
-						// All other endpoints require authentication
 						.anyRequest().authenticated()
 				)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

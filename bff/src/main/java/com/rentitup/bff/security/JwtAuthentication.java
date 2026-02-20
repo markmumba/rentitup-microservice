@@ -19,7 +19,7 @@ public class JwtAuthentication extends AbstractAuthenticationToken {
 		this.userId = userId;
 		this.email = email;
 		this.role = role;
-		// Call super.setAuthenticated(true) to bypass the deprecated warning
+		// Cal super.setAuthenticated(true) to bypass the deprecated warning
 		// This is safe because we're setting it in the constructor after validation
 		super.setAuthenticated(true);
 	}

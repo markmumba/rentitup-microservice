@@ -6,6 +6,7 @@ import com.rentitup.shared.proto.common.PaginationResponse;
 import com.rentitup.shared.proto.user.*;
 import com.rentitup.user_service.entities.UserEntity;
 import com.rentitup.user_service.mapper.UserMapper;
+import com.rentitup.user_service.service.AuthService;
 import com.rentitup.user_service.service.UserService;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 
 	private final UserService userService;
+	private final AuthService authService;
 	private final UserMapper userMapper;
 	private final JwtUtil jwtUtil;
 
@@ -34,7 +36,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 		try {
 			log.info("gRPC: Register user: {}", request.getEmail());
 
-			UserEntity user = userService.register(
+			UserEntity user = authService.register(
 					request.getEmail(),
 					request.getPassword(),
 					request.getFullName(),
@@ -58,7 +60,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 		try {
 			log.info("gRPC: Login user: {}", request.getEmail());
 
-			UserEntity user = userService.authenticate(request.getEmail(), request.getPassword());
+			UserEntity user = authService.authenticate(request.getEmail(), request.getPassword());
 
 			AuthResponse response = buildAuthResponse(user);
 			responseObserver.onNext(response);
@@ -66,7 +68,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 		} catch (Exception ex) {
 			log.error("Failed to login user", ex);
 			responseObserver.onError(Status.UNAUTHENTICATED
-					.withDescription("Invalid email or password")
+					.withDescription(ex.getMessage())
 					.asRuntimeException());
 		}
 	}
@@ -76,9 +78,18 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 		try {
 			log.info("gRPC: Refresh token");
 
-			var claims = jwtUtil.validateRefreshToken(request.getRefreshToken());
-			UserEntity user = userService.getUserById(claims.getUserId());
+			String oldRefreshToken = request.getRefreshToken();
 
+			// Validate the refresh token (checks JWT signature and expiration)
+			jwtUtil.validateRefreshToken(oldRefreshToken);
+
+			// Validate against database (checks if revoked)
+			UserEntity user = authService.validateRefreshToken(oldRefreshToken);
+
+			// Revoke the old refresh token
+			authService.revokeRefreshToken(oldRefreshToken);
+
+			// Generate new tokens
 			AuthResponse response = buildAuthResponse(user);
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
@@ -92,13 +103,30 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 
 	@Override
 	public void logout(LogoutRequest request, StreamObserver<LogoutResponse> responseObserver) {
-		log.info("gRPC: Logout");
-		LogoutResponse response = LogoutResponse.newBuilder()
-				.setSuccess(true)
-				.setMessage("Logged out successfully")
-				.build();
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+		try {
+			log.info("gRPC: Logout");
+
+			String refreshToken = request.getRefreshToken();
+
+			// Revoke the refresh token
+			authService.revokeRefreshToken(refreshToken);
+
+			LogoutResponse response = LogoutResponse.newBuilder()
+					.setSuccess(true)
+					.setMessage("Logged out successfully")
+					.build();
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception ex) {
+			log.warn("Logout failed: {}", ex.getMessage());
+			// Still return success - logout should be idempotent
+			LogoutResponse response = LogoutResponse.newBuilder()
+					.setSuccess(true)
+					.setMessage("Logged out successfully")
+					.build();
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		}
 	}
 
 	// ==================== User Management ====================
@@ -274,6 +302,9 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 				user.getEmail(),
 				user.getRole().name()
 		);
+
+		// Store refresh token in database for revocation support
+		authService.createRefreshToken(user, refreshToken, jwtUtil.getRefreshTokenExpirationMs());
 
 		return AuthResponse.newBuilder()
 				.setUser(userMapper.toProto(user))

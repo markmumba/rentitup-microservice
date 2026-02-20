@@ -27,42 +27,6 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
-	public UserEntity register(String email, String password, String fullName, String phone, ERole role) {
-		log.info("Registering new user with email: {}", email);
-
-		if (userRepository.existsByEmail(email)) {
-			throw new BadRequestException("Email already registered: " + email);
-		}
-
-		UserEntity user = UserEntity.builder()
-				.email(email)
-				.password(passwordEncoder.encode(password))
-				.fullName(fullName)
-				.phone(phone)
-				.role(role != null ? role : ERole.CUSTOMER)
-				.kycStatus(KycStatus.PENDING)
-				.build();
-
-		return userRepository.save(user);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public UserEntity authenticate(String email, String password) {
-		log.info("Authenticating user: {}", email);
-
-		UserEntity user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new BadRequestException("Invalid email or password"));
-
-		if (!passwordEncoder.matches(password, user.getPassword())) {
-			throw new BadRequestException("Invalid email or password");
-		}
-
-		return user;
-	}
-
-	@Override
-	@Transactional
 	public UserEntity createUser(UserEntity user) {
 		log.info("Creating user with email: {}", user.getEmail());
 
