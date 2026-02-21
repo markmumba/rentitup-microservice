@@ -1,5 +1,7 @@
 package com.rentitup.shared_libs.security;
 
+import lombok.*;
+
 import java.util.UUID;
 
 
