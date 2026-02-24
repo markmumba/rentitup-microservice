@@ -34,7 +34,7 @@ public class MachineServiceImpl implements MachineService {
 	private final MachineRepository machineRepository;
 	private final MaintenanceRecordRepository maintenanceRecordRepository;
 
-	@GrpcClient("USER-SERVICE")
+	@GrpcClient(value = "USER-SERVICE",forwardToken = true)
 	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
 	private boolean userExists(UUID userId) {
@@ -215,8 +215,7 @@ public class MachineServiceImpl implements MachineService {
 		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
 				() -> new BadRequestException("Machine not found: " + machineId)
 		);
-		Page<MaintenanceRecordEntity> records = maintenanceRecordRepository.findAllByMachine(machine,pageable);
-		return records;
+		return maintenanceRecordRepository.findAllByMachine(machine,pageable);
 	}
 
 	@Override

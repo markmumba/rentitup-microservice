@@ -9,7 +9,12 @@ import java.lang.annotation.*;
  * <p>Usage:
  * <pre>
  * {@code
+ * // Basic injection
  * @GrpcClient("USER-SERVICE")
+ * private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
+ *
+ * // With automatic token forwarding
+ * @GrpcClient(value = "USER-SERVICE", forwardToken = true)
  * private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
  * }
  * </pre>
@@ -22,4 +27,11 @@ public @interface GrpcClient {
 	 * The service name as registered in Eureka (e.g., "USER-SERVICE", "CATALOG-SERVICE").
 	 */
 	String value();
+
+	/**
+	 * If true, automatically forwards the current user's bearer token to the downstream service.
+	 * The token is retrieved from the Spring Security context.
+	 * Default is false.
+	 */
+	boolean forwardToken() default false;
 }

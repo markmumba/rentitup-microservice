@@ -2,7 +2,7 @@ package com.rentitup.bff.controller.catalog;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
-import com.rentitup.bff.grpc.GrpcClientFactory;
+import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.catalog.*;
 import com.rentitup.shared.proto.common.Location;
 import com.rentitup.shared.proto.common.Money;
@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +19,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/machines")
-@RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Machines", description = "Machine management endpoints")
 public class MachineController {
-	private final GrpcClientFactory grpcClient;
+
+	@GrpcClient(value = "CATALOG-SERVICE", forwardToken = true)
+	private CatalogServiceGrpc.CatalogServiceBlockingStub catalogServiceStub;
 
 	// ==================== Machine CRUD ====================
 
@@ -32,7 +32,7 @@ public class MachineController {
 	@PostMapping
 	public ResponseEntity<?> createMachine(@Valid @RequestBody CreateMachineRequest request) {
 		log.info("REST: Create machine request: {}", request.getName());
-		MachineResponse response = grpcClient.getCatalogClient().createMachine(request);
+		MachineResponse response = catalogServiceStub.createMachine(request);
 		return ResponseBuilder.created("Machine created successfully", response.getMachine());
 	}
 
@@ -48,7 +48,7 @@ public class MachineController {
 				.setIncludeOwner(includeOwner)
 				.setIncludeReviews(includeReviews)
 				.build();
-		MachineResponse response = grpcClient.getCatalogClient().getMachine(request);
+		MachineResponse response = catalogServiceStub.getMachine(request);
 		return ResponseBuilder.success("Machine retrieved successfully", response.getMachine());
 	}
 
@@ -74,7 +74,7 @@ public class MachineController {
 		}
 		if (request.hasIsAvailable()) builder.setIsAvailable(request.getIsAvailable());
 
-		MachineResponse response = grpcClient.getCatalogClient().updateMachine(builder.build());
+		MachineResponse response = catalogServiceStub.updateMachine(builder.build());
 		return ResponseBuilder.success("Machine updated successfully", response.getMachine());
 	}
 
@@ -85,7 +85,7 @@ public class MachineController {
 		DeleteMachineRequest request = DeleteMachineRequest.newBuilder()
 				.setId(id)
 				.build();
-		DeleteMachineResponse response = grpcClient.getCatalogClient().deleteMachine(request);
+		DeleteMachineResponse response = catalogServiceStub.deleteMachine(request);
 		return ResponseBuilder.success(response.getMessage(), null);
 	}
 
@@ -108,7 +108,7 @@ public class MachineController {
 		if (status != null) builder.setStatus(status);
 		if (minCondition != null) builder.setMinCondition(minCondition);
 
-		ListMachinesResponse response = grpcClient.getCatalogClient().listMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.listMachines(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -156,7 +156,7 @@ public class MachineController {
 			if (radiusKm != null) builder.setRadiusKm(radiusKm);
 		}
 
-		ListMachinesResponse response = grpcClient.getCatalogClient().searchMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.searchMachines(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -175,7 +175,7 @@ public class MachineController {
 
 		if (status != null) builder.setStatus(status);
 
-		ListMachinesResponse response = grpcClient.getCatalogClient().getMachinesByOwner(builder.build());
+		ListMachinesResponse response = catalogServiceStub.getMachinesByOwner(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -191,7 +191,7 @@ public class MachineController {
 
 		if (categoryId != null) builder.setCategoryId(categoryId);
 
-		ListMachinesResponse response = grpcClient.getCatalogClient().getFeaturedMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.getFeaturedMachines(builder.build());
 		return ResponseBuilder.success("Featured machines retrieved", response.getMachinesList());
 	}
 
@@ -216,7 +216,7 @@ public class MachineController {
 
 		if (categoryId != null) builder.setCategoryId(categoryId);
 
-		ListMachinesResponse response = grpcClient.getCatalogClient().getNearbyMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.getNearbyMachines(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -236,7 +236,7 @@ public class MachineController {
 				.setContentType(contentType)
 				.build();
 
-		GetUploadUrlResponse response = grpcClient.getCatalogClient().getUploadUrl(request);
+		GetUploadUrlResponse response = catalogServiceStub.getUploadUrl(request);
 		return ResponseBuilder.success("Upload URL generated", response);
 	}
 
@@ -253,7 +253,7 @@ public class MachineController {
 				.setIsPrimary(request.getIsPrimary())
 				.build();
 
-		MachineResponse response = grpcClient.getCatalogClient().addMachineImage(grpcRequest);
+		MachineResponse response = catalogServiceStub.addMachineImage(grpcRequest);
 		return ResponseBuilder.created("Image added successfully", response.getMachine());
 	}
 
@@ -269,7 +269,7 @@ public class MachineController {
 				.setImageId(imageId)
 				.build();
 
-		MachineResponse response = grpcClient.getCatalogClient().removeMachineImage(request);
+		MachineResponse response = catalogServiceStub.removeMachineImage(request);
 		return ResponseBuilder.success("Image removed successfully", response.getMachine());
 	}
 
@@ -285,7 +285,7 @@ public class MachineController {
 				.setImageId(imageId)
 				.build();
 
-		MachineResponse response = grpcClient.getCatalogClient().setPrimaryImage(request);
+		MachineResponse response = catalogServiceStub.setPrimaryImage(request);
 		return ResponseBuilder.success("Primary image set successfully", response.getMachine());
 	}
 
@@ -308,7 +308,7 @@ public class MachineController {
 			builder.setNextServiceDate(request.getNextServiceDate());
 		}
 
-		MaintenanceRecordResponse response = grpcClient.getCatalogClient().addMaintenanceRecord(builder.build());
+		MaintenanceRecordResponse response = catalogServiceStub.addMaintenanceRecord(builder.build());
 		return ResponseBuilder.created("Maintenance record added", response.getRecord());
 	}
 
@@ -325,7 +325,7 @@ public class MachineController {
 				.setPagination(buildPaginationRequest(page, size))
 				.build();
 
-		MaintenanceHistoryResponse response = grpcClient.getCatalogClient().getMaintenanceHistory(request);
+		MaintenanceHistoryResponse response = catalogServiceStub.getMaintenanceHistory(request);
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())
@@ -351,7 +351,7 @@ public class MachineController {
 				.setDaysAhead(daysAhead)
 				.build();
 
-		MaintenanceHistoryResponse response = grpcClient.getCatalogClient().getUpcomingMaintenance(request);
+		MaintenanceHistoryResponse response = catalogServiceStub.getUpcomingMaintenance(request);
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())

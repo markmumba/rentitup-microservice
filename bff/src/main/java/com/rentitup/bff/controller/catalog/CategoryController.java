@@ -2,14 +2,13 @@ package com.rentitup.bff.controller.catalog;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
-import com.rentitup.bff.grpc.GrpcClientFactory;
+import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.catalog.*;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,17 +17,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/categories")
-@RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Categories", description = "Category management endpoints")
 public class CategoryController {
-	private final GrpcClientFactory grpcClient;
+
+	@GrpcClient(value = "CATALOG-SERVICE", forwardToken = true)
+	private CatalogServiceGrpc.CatalogServiceBlockingStub catalogServiceStub;
 
 	@Operation(summary = "Create a new category", description = "Creates a new machine category")
 	@PostMapping
 	public ResponseEntity<?> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
 		log.info("REST: Create category request: {}", request.getName());
-		CategoryResponse response = grpcClient.getCatalogClient().createCategory(request);
+		CategoryResponse response = catalogServiceStub.createCategory(request);
 		return ResponseBuilder.created("Category created successfully", response.getResponse());
 	}
 
@@ -39,7 +39,7 @@ public class CategoryController {
 		GetCategoryRequest request = GetCategoryRequest.newBuilder()
 				.setId(id)
 				.build();
-		CategoryResponse response = grpcClient.getCatalogClient().getCategory(request);
+		CategoryResponse response = catalogServiceStub.getCategory(request);
 		return ResponseBuilder.success("Category retrieved successfully", response.getResponse());
 	}
 
@@ -61,7 +61,7 @@ public class CategoryController {
 				.setIncludeEmpty(includeEmpty)
 				.build();
 
-		ListCategoriesResponse response = grpcClient.getCatalogClient().listCategories(request);
+		ListCategoriesResponse response = catalogServiceStub.listCategories(request);
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())
@@ -99,7 +99,7 @@ public class CategoryController {
 			builder.setDefaultPriceType(request.getDefaultPriceType());
 		}
 
-		CategoryResponse response = grpcClient.getCatalogClient().updateCategory(builder.build());
+		CategoryResponse response = catalogServiceStub.updateCategory(builder.build());
 		return ResponseBuilder.success("Category updated successfully", response.getResponse());
 	}
 
@@ -110,7 +110,7 @@ public class CategoryController {
 		DeleteCategoryRequest request = DeleteCategoryRequest.newBuilder()
 				.setId(id)
 				.build();
-		DeleteCategoryResponse response = grpcClient.getCatalogClient().deleteCategory(request);
+		DeleteCategoryResponse response = catalogServiceStub.deleteCategory(request);
 		return ResponseBuilder.success(response.getMessage(), null);
 	}
 }

@@ -2,13 +2,12 @@ package com.rentitup.bff.controller.user;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
-import com.rentitup.bff.grpc.GrpcClientFactory;
+import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.user.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,12 +18,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Users", description = "User management endpoints")
 public class UserController {
 
-	private final GrpcClientFactory grpcClient;
+	@GrpcClient(value = "USER-SERVICE", forwardToken = true)
+	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
 	@Operation(summary = "Get current user profile", description = "Returns the profile of the authenticated user")
 	@GetMapping("/me")
@@ -35,7 +34,7 @@ public class UserController {
 		GetUserRequest request = GetUserRequest.newBuilder()
 				.setId(userId)
 				.build();
-		UserResponse response = grpcClient.getUserClient().getUser(request);
+		UserResponse response = userServiceStub.getUser(request);
 		return ResponseBuilder.success("User retrieved", response.getUser());
 	}
 
@@ -52,7 +51,7 @@ public class UserController {
 		if (request.hasPhone()) builder.setPhone(request.getPhone());
 		if (request.hasBusinessLicense()) builder.setBusinessLicense(request.getBusinessLicense());
 
-		UserResponse response = grpcClient.getUserClient().updateUser(builder.build());
+		UserResponse response = userServiceStub.updateUser(builder.build());
 		return ResponseBuilder.success("User updated", response.getUser());
 	}
 
@@ -64,7 +63,7 @@ public class UserController {
 		GetUserRequest request = GetUserRequest.newBuilder()
 				.setId(id)
 				.build();
-		UserResponse response = grpcClient.getUserClient().getUser(request);
+		UserResponse response = userServiceStub.getUser(request);
 		return ResponseBuilder.success("User retrieved", response.getUser());
 	}
 
@@ -87,7 +86,7 @@ public class UserController {
 		if (userType != null) builder.setUserType(userType);
 		if (kycStatus != null) builder.setKyStatus(kycStatus);
 
-		ListUsersResponse response = grpcClient.getUserClient().listUsers(builder.build());
+		ListUsersResponse response = userServiceStub.listUsers(builder.build());
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())
@@ -114,7 +113,7 @@ public class UserController {
 				.setKycStatus(request.getKycStatus())
 				.build();
 
-		UserResponse response = grpcClient.getUserClient().verifyUser(grpcRequest);
+		UserResponse response = userServiceStub.verifyUser(grpcRequest);
 		return ResponseBuilder.success("User verification updated", response.getUser());
 	}
 
