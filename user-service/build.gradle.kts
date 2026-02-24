@@ -10,6 +10,7 @@ description = "microservice for user data "
 
 dependencies {
 	implementation(project(":shared-libs"))
+	implementation(project(":common"))
 	implementation("org.springframework.boot:spring-boot-starter-security")
 }
 

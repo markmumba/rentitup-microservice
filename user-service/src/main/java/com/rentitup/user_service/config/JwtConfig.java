@@ -1,7 +1,7 @@
 package com.rentitup.user_service.config;
 
-import com.rentitup.shared_libs.security.JwtProperties;
-import com.rentitup.shared_libs.security.JwtUtil;
+import com.rentitup.common.security.JwtProperties;
+import com.rentitup.common.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -3,7 +3,7 @@ package com.rentitup.catalog_service.service.Impl;
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.service.CategoryService;
-import com.rentitup.shared_libs.exceptions.BadRequestException;
+import com.rentitup.common.exceptions.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

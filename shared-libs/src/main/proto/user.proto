@@ -32,6 +32,8 @@ message User {
   rentitup.common.Timestamp verified_at=8;
   rentitup.common.Timestamp updated_at =9;
   string profile_image_url = 10;
+  string password_hash=11;
+  bool is_active=12;
 }
 
 // ==================== Authentication ====================

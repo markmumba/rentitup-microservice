@@ -3,7 +3,6 @@ package com.rentitup.bff.controller.user;
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.bff.grpc.GrpcClientFactory;
-import com.rentitup.bff.security.JwtAuthentication;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.user.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,8 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,11 +29,11 @@ public class UserController {
 	@Operation(summary = "Get current user profile", description = "Returns the profile of the authenticated user")
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser() {
-		JwtAuthentication auth = getAuthentication();
+		String userId = getCurrentUserId();
 
-		log.info("REST: Get current user: {}", auth.getUserId());
+		log.info("REST: Get current user: {}", userId);
 		GetUserRequest request = GetUserRequest.newBuilder()
-				.setId(auth.getUserId().toString())
+				.setId(userId)
 				.build();
 		UserResponse response = grpcClient.getUserClient().getUser(request);
 		return ResponseBuilder.success("User retrieved", response.getUser());
@@ -42,11 +42,11 @@ public class UserController {
 	@Operation(summary = "Update current user profile", description = "Updates the profile of the authenticated user")
 	@PutMapping("/me")
 	public ResponseEntity<?> updateCurrentUser(@RequestBody UpdateUserRequest request) {
-		JwtAuthentication auth = getAuthentication();
+		String userId = getCurrentUserId();
 
-		log.info("REST: Update current user: {}", auth.getUserId());
+		log.info("REST: Update current user: {}", userId);
 		UpdateUserRequest.Builder builder = UpdateUserRequest.newBuilder()
-				.setId(auth.getUserId().toString());
+				.setId(userId);
 
 		if (request.hasFullname()) builder.setFullname(request.getFullname());
 		if (request.hasPhone()) builder.setPhone(request.getPhone());
@@ -118,8 +118,10 @@ public class UserController {
 		return ResponseBuilder.success("User verification updated", response.getUser());
 	}
 
-	private JwtAuthentication getAuthentication() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		return (JwtAuthentication) auth;
+	private String getCurrentUserId() {
+		JwtAuthenticationToken auth = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+		assert auth != null;
+		Jwt jwt = auth.getToken();
+		return jwt.getClaimAsString("user_id");
 	}
 }

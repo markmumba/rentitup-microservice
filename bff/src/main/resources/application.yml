@@ -5,6 +5,28 @@ spring:
   application:
     name: bff
 
+  security:
+    oauth2:
+      client:
+        registration:
+          auth-server:
+            client-id: bff-gateway
+            client-secret: bff-gateway-secret
+            authorization-grant-type: authorization_code
+            redirect_uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - read
+              - write
+        provider:
+          auth-server:
+            issuer-uri: http://localhost:9000
+    resourceserver:
+       jwt:
+         issuer-uri: http://localhost:9000
+         jwk-set-uri: http://localhost:9000/oauth2/jwks
+
 eureka:
   client:
     register-with-eureka: false
@@ -20,5 +42,3 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
-jwt:
-  secret-key: ${JWT_SECRET_KEY:your-256-bit-secret-key-here-must-be-at-least-32-chars}

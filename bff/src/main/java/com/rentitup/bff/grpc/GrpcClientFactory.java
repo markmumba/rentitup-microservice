@@ -2,7 +2,7 @@ package com.rentitup.bff.grpc;
 
 import com.rentitup.shared.proto.catalog.CatalogServiceGrpc;
 import com.rentitup.shared.proto.user.UserServiceGrpc;
-import com.rentitup.shared_libs.grpc.GrpcChannelFactory;
+import com.rentitup.common.grpc.GrpcChannelFactory;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

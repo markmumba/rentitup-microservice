@@ -21,6 +21,13 @@ spring:
       hibernate:
         default_schema: catalog
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
+
   flyway:
     enabled: true
     locations: classpath:db/migration

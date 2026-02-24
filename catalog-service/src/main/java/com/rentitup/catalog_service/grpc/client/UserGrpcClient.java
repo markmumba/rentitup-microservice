@@ -3,7 +3,7 @@ package com.rentitup.catalog_service.grpc.client;
 import com.rentitup.shared.proto.user.GetUserRequest;
 import com.rentitup.shared.proto.user.UserResponse;
 import com.rentitup.shared.proto.user.UserServiceGrpc;
-import com.rentitup.shared_libs.grpc.GrpcChannelFactory;
+import com.rentitup.common.grpc.GrpcChannelFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;

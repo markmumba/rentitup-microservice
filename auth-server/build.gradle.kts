@@ -8,7 +8,10 @@ description = "Authentication server to control security on the platform"
 
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
-	testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
+	implementation("org.springframework.boot:spring-boot-h2console")
+	runtimeOnly("com.h2database:h2")
+	implementation(project(":shared-libs"))
+	implementation(project(":common"))
 }
 

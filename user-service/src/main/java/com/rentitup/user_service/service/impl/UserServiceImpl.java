@@ -1,6 +1,6 @@
 package com.rentitup.user_service.service.impl;
 
-import com.rentitup.shared_libs.exceptions.BadRequestException;
+import com.rentitup.common.exceptions.BadRequestException;
 import com.rentitup.user_service.entities.UserEntity;
 import com.rentitup.user_service.enums.ERole;
 import com.rentitup.user_service.enums.KycStatus;

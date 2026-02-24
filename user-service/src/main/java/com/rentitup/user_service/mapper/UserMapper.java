@@ -30,7 +30,43 @@ public interface UserMapper {
 				.setEmail(entity.getEmail())
 				.setFullName(entity.getFullName())
 				.setUserType(mapRole(entity.getRole()))
-				.setKycStatus(mapKycStatus(entity.getKycStatus()));
+				.setKycStatus(mapKycStatus(entity.getKycStatus()))
+				.setIsActive(entity.isEnabled());
+
+		if (entity.getPhone() != null) {
+			builder.setPhone(entity.getPhone());
+		}
+		if (entity.getProfileImageUrl() != null) {
+			builder.setProfileImageUrl(entity.getProfileImageUrl());
+		}
+		if (entity.getCreatedAt() != null) {
+			builder.setCreatedAt(mapTimestamp(entity.getCreatedAt()));
+		}
+		if (entity.getUpdatedAt() != null) {
+			builder.setUpdatedAt(mapTimestamp(entity.getUpdatedAt()));
+		}
+		if (entity.getVerifiedAt() != null) {
+			builder.setVerifiedAt(mapTimestamp(entity.getVerifiedAt()));
+		}
+
+		return builder.build();
+	}
+
+	/**
+	 * Converts UserEntity to Proto User including password hash.
+	 * Use this only for auth server requests where password verification is needed.
+	 */
+	default User toProtoWithHash(UserEntity entity) {
+		if (entity == null) return null;
+
+		User.Builder builder = User.newBuilder()
+				.setId(entity.getId().toString())
+				.setEmail(entity.getEmail())
+				.setFullName(entity.getFullName())
+				.setUserType(mapRole(entity.getRole()))
+				.setKycStatus(mapKycStatus(entity.getKycStatus()))
+				.setIsActive(entity.isEnabled())
+				.setPasswordHash(entity.getPassword());
 
 		if (entity.getPhone() != null) {
 			builder.setPhone(entity.getPhone());

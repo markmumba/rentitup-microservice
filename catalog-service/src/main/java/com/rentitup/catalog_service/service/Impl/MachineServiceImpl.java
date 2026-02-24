@@ -9,7 +9,7 @@ import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
 import com.rentitup.catalog_service.service.MachineService;
-import com.rentitup.shared_libs.exceptions.BadRequestException;
+import com.rentitup.common.exceptions.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

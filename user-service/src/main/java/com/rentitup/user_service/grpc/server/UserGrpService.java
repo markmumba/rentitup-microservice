@@ -1,6 +1,6 @@
 package com.rentitup.user_service.grpc.server;
 
-import com.rentitup.shared_libs.security.JwtUtil;
+import com.rentitup.common.security.JwtUtil;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.common.PaginationResponse;
 import com.rentitup.shared.proto.user.*;
@@ -187,8 +187,9 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 
 			UserEntity user = userService.getUserByEmail(request.getEmail());
 
+			// Use toProtoWithHash for auth server requests that need password verification
 			UserResponse response = UserResponse.newBuilder()
-					.setUser(userMapper.toProto(user))
+					.setUser(userMapper.toProtoWithHash(user))
 					.build();
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
