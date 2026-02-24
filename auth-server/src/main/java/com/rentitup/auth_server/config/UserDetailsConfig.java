@@ -1,11 +1,9 @@
 package com.rentitup.auth_server.config;
 
+import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.user.GetUserByEmailRequest;
 import com.rentitup.shared.proto.user.UserResponse;
 import com.rentitup.shared.proto.user.UserServiceGrpc;
-import com.rentitup.common.grpc.GrpcChannelFactory;
-import io.grpc.ManagedChannel;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,18 +15,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.List;
 
 @Configuration
-@RequiredArgsConstructor
 @Slf4j
 public class UserDetailsConfig {
 
-	private static final String USER_SERVICE = "USER-SERVICE";
-
-	private final GrpcChannelFactory channelFactory;
-
-	private UserServiceGrpc.UserServiceBlockingStub getUserClient() {
-		ManagedChannel channel = channelFactory.getChannel(USER_SERVICE);
-		return UserServiceGrpc.newBlockingStub(channel);
-	}
+	@GrpcClient("USER-SERVICE")
+	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
 	@Bean
 	public UserDetailsService userDetailsService() {
@@ -36,13 +27,15 @@ public class UserDetailsConfig {
 			log.info("Getting user details for {}", username);
 
 			try {
-				UserResponse response = getUserClient().getUserByEmail(GetUserByEmailRequest.newBuilder()
+				UserResponse response = userServiceStub.getUserByEmail(
+						GetUserByEmailRequest.newBuilder()
 								.setEmail(username)
-						.build());
+								.build()
+				);
 
 				var user = response.getUser();
 
-				log.info("Found user:{} with type {} ", user.getEmail(),user.getUserType());
+				log.info("Found user:{} with type {} ", user.getEmail(), user.getUserType());
 
 				return User.builder()
 						.username(user.getEmail())

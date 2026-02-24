@@ -1,1 +1,2 @@
 com.rentitup.common.grpc.GrpcAutoConfiguration
+com.rentitup.common.grpc.client.GrpcClientsAutoConfiguration

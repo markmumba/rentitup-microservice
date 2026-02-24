@@ -1,12 +1,10 @@
 package com.rentitup.user_service.grpc.server;
 
-import com.rentitup.common.security.JwtUtil;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.common.PaginationResponse;
 import com.rentitup.shared.proto.user.*;
 import com.rentitup.user_service.entities.UserEntity;
 import com.rentitup.user_service.mapper.UserMapper;
-import com.rentitup.user_service.service.AuthService;
 import com.rentitup.user_service.service.UserService;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -25,109 +23,7 @@ import java.util.UUID;
 public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 
 	private final UserService userService;
-	private final AuthService authService;
 	private final UserMapper userMapper;
-	private final JwtUtil jwtUtil;
-
-	// ==================== Authentication ====================
-
-	@Override
-	public void register(RegisterRequest request, StreamObserver<AuthResponse> responseObserver) {
-		try {
-			log.info("gRPC: Register user: {}", request.getEmail());
-
-			UserEntity user = authService.register(
-					request.getEmail(),
-					request.getPassword(),
-					request.getFullName(),
-					request.getPhone(),
-					userMapper.mapUserType(request.getUserType())
-			);
-
-			AuthResponse response = buildAuthResponse(user);
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
-		} catch (Exception ex) {
-			log.error("Failed to register user", ex);
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
-		}
-	}
-
-	@Override
-	public void login(LoginRequest request, StreamObserver<AuthResponse> responseObserver) {
-		try {
-			log.info("gRPC: Login user: {}", request.getEmail());
-
-			UserEntity user = authService.authenticate(request.getEmail(), request.getPassword());
-
-			AuthResponse response = buildAuthResponse(user);
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
-		} catch (Exception ex) {
-			log.error("Failed to login user", ex);
-			responseObserver.onError(Status.UNAUTHENTICATED
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
-		}
-	}
-
-	@Override
-	public void refreshToken(RefreshTokenRequest request, StreamObserver<AuthResponse> responseObserver) {
-		try {
-			log.info("gRPC: Refresh token");
-
-			String oldRefreshToken = request.getRefreshToken();
-
-			// Validate the refresh token (checks JWT signature and expiration)
-			jwtUtil.validateRefreshToken(oldRefreshToken);
-
-			// Validate against database (checks if revoked)
-			UserEntity user = authService.validateRefreshToken(oldRefreshToken);
-
-			// Revoke the old refresh token
-			authService.revokeRefreshToken(oldRefreshToken);
-
-			// Generate new tokens
-			AuthResponse response = buildAuthResponse(user);
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
-		} catch (Exception ex) {
-			log.error("Failed to refresh token", ex);
-			responseObserver.onError(Status.UNAUTHENTICATED
-					.withDescription("Invalid or expired refresh token")
-					.asRuntimeException());
-		}
-	}
-
-	@Override
-	public void logout(LogoutRequest request, StreamObserver<LogoutResponse> responseObserver) {
-		try {
-			log.info("gRPC: Logout");
-
-			String refreshToken = request.getRefreshToken();
-
-			// Revoke the refresh token
-			authService.revokeRefreshToken(refreshToken);
-
-			LogoutResponse response = LogoutResponse.newBuilder()
-					.setSuccess(true)
-					.setMessage("Logged out successfully")
-					.build();
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
-		} catch (Exception ex) {
-			log.warn("Logout failed: {}", ex.getMessage());
-			// Still return success - logout should be idempotent
-			LogoutResponse response = LogoutResponse.newBuilder()
-					.setSuccess(true)
-					.setMessage("Logged out successfully")
-					.build();
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
-		}
-	}
 
 	// ==================== User Management ====================
 
@@ -290,28 +186,4 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 		}
 	}
 
-	// ==================== Helper Methods ====================
-
-	private AuthResponse buildAuthResponse(UserEntity user) {
-		String accessToken = jwtUtil.generateAccessToken(
-				user.getId(),
-				user.getEmail(),
-				user.getRole().name()
-		);
-		String refreshToken = jwtUtil.generateRefreshToken(
-				user.getId(),
-				user.getEmail(),
-				user.getRole().name()
-		);
-
-		// Store refresh token in database for revocation support
-		authService.createRefreshToken(user, refreshToken, jwtUtil.getRefreshTokenExpirationMs());
-
-		return AuthResponse.newBuilder()
-				.setUser(userMapper.toProto(user))
-				.setAccessToken(accessToken)
-				.setRefreshToken(refreshToken)
-				.setExpiresIn(jwtUtil.getAccessTokenExpirationMs() / 1000)
-				.build();
-	}
 }

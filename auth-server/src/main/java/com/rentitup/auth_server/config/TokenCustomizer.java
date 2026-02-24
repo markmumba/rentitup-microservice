@@ -1,34 +1,25 @@
 package com.rentitup.auth_server.config;
 
+import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.user.GetUserByEmailRequest;
 import com.rentitup.shared.proto.user.UserServiceGrpc;
-import com.rentitup.common.grpc.GrpcChannelFactory;
-import io.grpc.ManagedChannel;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
 import java.util.stream.Collectors;
 
 @Configuration
-@RequiredArgsConstructor
 @Slf4j
 public class TokenCustomizer {
-	private static final String USER_SERVICE = "USER-SERVICE";
 
-	private final GrpcChannelFactory channelFactory;
-
-	private UserServiceGrpc.UserServiceBlockingStub getUserClient() {
-		ManagedChannel channel = channelFactory.getChannel(USER_SERVICE);
-		return UserServiceGrpc.newBlockingStub(channel);
-	}
+	@GrpcClient("USER-SERVICE")
+	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
 	@Bean
 	public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
@@ -58,9 +49,11 @@ public class TokenCustomizer {
 					String username = principal.getName();
 
 					try {
-						var user = getUserClient().getUserByEmail(GetUserByEmailRequest.newBuilder()
+						var user = userServiceStub.getUserByEmail(
+								GetUserByEmailRequest.newBuilder()
 										.setEmail(username)
-								.build()).getUser();
+										.build()
+						).getUser();
 
 						context.getClaims().claim("user_id", user.getId());
 						context.getClaims().claim("user_role", user.getUserType().name());

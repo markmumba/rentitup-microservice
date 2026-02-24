@@ -4,12 +4,15 @@ import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
 import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
-import com.rentitup.catalog_service.grpc.client.UserGrpcClient;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
 import com.rentitup.catalog_service.service.MachineService;
 import com.rentitup.common.exceptions.BadRequestException;
+import com.rentitup.common.grpc.client.GrpcClient;
+import com.rentitup.shared.proto.user.GetUserRequest;
+import com.rentitup.shared.proto.user.UserServiceGrpc;
+import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,7 +33,22 @@ public class MachineServiceImpl implements MachineService {
 	private final CategoryRepository categoryRepository;
 	private final MachineRepository machineRepository;
 	private final MaintenanceRecordRepository maintenanceRecordRepository;
-	private final UserGrpcClient userGrpcClient;
+
+	@GrpcClient("USER-SERVICE")
+	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
+
+	private boolean userExists(UUID userId) {
+		try {
+			GetUserRequest request = GetUserRequest.newBuilder()
+					.setId(userId.toString())
+					.build();
+			userServiceStub.getUser(request);
+			return true;
+		} catch (StatusRuntimeException e) {
+			log.warn("User not found {}: {}", userId, e.getStatus());
+			return false;
+		}
+	}
 
 	@Override
 	@Transactional
@@ -39,7 +57,7 @@ public class MachineServiceImpl implements MachineService {
 				() -> new BadRequestException("Category not found: " + categoryId)
 		);
 
-		if (!userGrpcClient.userExists(machine.getOwnerId())) {
+		if (!userExists(machine.getOwnerId())) {
 			throw new BadRequestException("Owner not found: " + machine.getOwnerId());
 		}
 
@@ -203,7 +221,7 @@ public class MachineServiceImpl implements MachineService {
 
 	@Override
 	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId, int daysAhead, Pageable pageable) {
-		if (!userGrpcClient.userExists(ownerId)) {
+		if (!userExists(ownerId)) {
 			throw new BadRequestException("Owner not found: " + ownerId);
 		}
 		LocalDate now = LocalDate.now();

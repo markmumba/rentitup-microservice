@@ -21,6 +21,7 @@ dependencies {
 	// Spring Security for JWT validation
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	implementation(project(":shared-libs"))
 
 	// Spring Boot autoconfigure
 	compileOnly("org.springframework.boot:spring-boot-autoconfigure")
@@ -28,10 +29,8 @@ dependencies {
 	// Eureka client for service discovery (compileOnly - services provide it)
 	compileOnly("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
-	// JWT
-	api("io.jsonwebtoken:jjwt-api:$jjwtVersion")
-	runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
-	runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+
+
 
 	// Lombok
 	compileOnly("org.projectlombok:lombok:1.18.36")
