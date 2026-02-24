@@ -12,6 +12,7 @@ dependencies {
 	implementation(project(":shared-libs"))
 	implementation(project(":common"))
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 }
 
 application {
