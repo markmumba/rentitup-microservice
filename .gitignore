@@ -40,3 +40,4 @@ ARCHITECTURE.md
 .env
 catalog-service/.env
 docs
+*.hprof
