@@ -8,13 +8,9 @@ description = "Backend for Frontend (BFF) for Rentitup"
 
 dependencies {
 	implementation("com.google.protobuf:protobuf-java-util")
+
 	implementation(project(":shared-libs"))
 	implementation(project(":common"))
-
-	implementation("org.springframework.boot:spring-boot-starter-security")
-
-	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
-	testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
 
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 }

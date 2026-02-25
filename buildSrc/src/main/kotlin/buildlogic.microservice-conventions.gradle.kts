@@ -26,6 +26,10 @@ dependencies {
         implementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
     }
 
+    implementation("org.springframework.boot:spring-boot-starter-security")
+
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
+
     // Web server (Spring Boot 4.x uses webmvc naming)
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
@@ -44,6 +48,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     // Testing
+    testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

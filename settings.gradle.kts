@@ -15,6 +15,7 @@ include(
     "shared-libs",
     "common",
     "auth-server",
+    "booking-service",
     "catalog-service",
     "service-registry",
     "user-service",

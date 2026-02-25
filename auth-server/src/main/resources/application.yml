@@ -25,3 +25,5 @@ eureka:
     prefer-ip-address: true
 
 
+auth:
+  redirectUri: http://localhost:8080/login/oauth2/code/auth-server
