@@ -11,5 +11,6 @@ description = "booking service microservice"
 
 dependencies {
 	implementation(project(":shared-libs"))
+	implementation(project(":common"))
 }
 
