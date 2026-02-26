@@ -43,6 +43,7 @@ grpc:
   auth:
     public-methods:
       - "rentitup.user.UserService/CreateUser"
+      - "rentitup.user.UserService/GetUserByEmail"
 
 eureka:
   client:
