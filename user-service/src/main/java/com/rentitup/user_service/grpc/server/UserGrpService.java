@@ -1,12 +1,12 @@
 package com.rentitup.user_service.grpc.server;
 
+import com.rentitup.common.grpc.GrpcExceptionHandler;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.common.PaginationResponse;
 import com.rentitup.shared.proto.user.*;
 import com.rentitup.user_service.entities.UserEntity;
 import com.rentitup.user_service.mapper.UserMapper;
 import com.rentitup.user_service.service.UserService;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,10 +48,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (Exception ex) {
-			log.error("Failed to create user", ex);
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
+			GrpcExceptionHandler.handleException(ex, responseObserver, "Create user");
 		}
 	}
 
@@ -69,10 +66,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (Exception ex) {
-			log.error("Failed to get user", ex);
-			responseObserver.onError(Status.NOT_FOUND
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
+			GrpcExceptionHandler.handleException(ex, responseObserver, "Get user");
 		}
 	}
 
@@ -90,10 +84,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (Exception ex) {
-			log.error("Failed to get user by email", ex);
-			responseObserver.onError(Status.NOT_FOUND
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
+			GrpcExceptionHandler.handleException(ex, responseObserver, "Get user by email");
 		}
 	}
 
@@ -118,10 +109,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (Exception ex) {
-			log.error("Failed to update user", ex);
-			responseObserver.onError(Status.INTERNAL
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
+			GrpcExceptionHandler.handleException(ex, responseObserver, "Update user");
 		}
 	}
 
@@ -139,10 +127,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (Exception ex) {
-			log.error("Failed to verify user", ex);
-			responseObserver.onError(Status.INTERNAL
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
+			GrpcExceptionHandler.handleException(ex, responseObserver, "Verify user");
 		}
 	}
 
@@ -179,10 +164,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onNext(responseBuilder.build());
 			responseObserver.onCompleted();
 		} catch (Exception ex) {
-			log.error("Failed to list users", ex);
-			responseObserver.onError(Status.INTERNAL
-					.withDescription(ex.getMessage())
-					.asRuntimeException());
+			GrpcExceptionHandler.handleException(ex, responseObserver, "List users");
 		}
 	}
 

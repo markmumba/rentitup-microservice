@@ -1,6 +1,7 @@
 package com.rentitup.user_service.service.impl;
 
-import com.rentitup.common.exceptions.BadRequestException;
+import com.rentitup.common.exceptions.ConflictException;
+import com.rentitup.common.exceptions.NotFoundException;
 import com.rentitup.user_service.entities.UserEntity;
 import com.rentitup.user_service.enums.ERole;
 import com.rentitup.user_service.enums.KycStatus;
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
 		log.info("Creating user with email: {}", user.getEmail());
 
 		if (userRepository.existsByEmail(user.getEmail())) {
-			throw new BadRequestException("Email already registered: " + user.getEmail());
+			throw new ConflictException("Email already registered: " + user.getEmail());
 		}
 
 		// Hash password if provided
@@ -46,14 +47,14 @@ public class UserServiceImpl implements UserService {
 	@Transactional(readOnly = true)
 	public UserEntity getUserById(UUID id) {
 		return userRepository.findById(id)
-				.orElseThrow(() -> new BadRequestException("User not found: " + id));
+				.orElseThrow(() -> new NotFoundException("User not found: " + id));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public UserEntity getUserByEmail(String email) {
 		return userRepository.findByEmail(email)
-				.orElseThrow(() -> new BadRequestException("User not found: " + email));
+				.orElseThrow(() -> new NotFoundException("User not found: " + email));
 	}
 
 	@Override

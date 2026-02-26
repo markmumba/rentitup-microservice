@@ -4,15 +4,12 @@ import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
 import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
+import com.rentitup.catalog_service.grpc.client.UserGrpcClient;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
 import com.rentitup.catalog_service.service.MachineService;
-import com.rentitup.common.exceptions.BadRequestException;
-import com.rentitup.common.grpc.client.GrpcClient;
-import com.rentitup.shared.proto.user.GetUserRequest;
-import com.rentitup.shared.proto.user.UserServiceGrpc;
-import io.grpc.StatusRuntimeException;
+import com.rentitup.common.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,9 +30,7 @@ public class MachineServiceImpl implements MachineService {
 	private final CategoryRepository categoryRepository;
 	private final MachineRepository machineRepository;
 	private final MaintenanceRecordRepository maintenanceRecordRepository;
-
-	@GrpcClient(value = "USER-SERVICE",forwardToken = true)
-	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
+	private final UserGrpcClient userGrpcClient;
 
 
 
@@ -43,11 +38,11 @@ public class MachineServiceImpl implements MachineService {
 	@Transactional
 	public MachineEntity createMachine(MachineEntity machine, UUID categoryId) {
 		CategoryEntity category = categoryRepository.findById(categoryId).orElseThrow(
-				() -> new BadRequestException("Category not found: " + categoryId)
+				() -> new NotFoundException("Category not found: " + categoryId)
 		);
 
-		if (!userExists(machine.getOwnerId())) {
-			throw new BadRequestException("Owner not found: " + machine.getOwnerId());
+		if (!userGrpcClient.userExists(machine.getOwnerId())) {
+			throw new NotFoundException("Owner not found: " + machine.getOwnerId());
 		}
 
 		machine.setCategory(category);
@@ -58,7 +53,7 @@ public class MachineServiceImpl implements MachineService {
 	@Transactional(readOnly = true)
 	public MachineEntity getMachine(UUID id) {
 		return machineRepository.findById(id).orElseThrow(
-				() -> new BadRequestException("Machine not found: " + id)
+				() -> new NotFoundException("Machine not found: " + id)
 		);
 	}
 
@@ -101,7 +96,7 @@ public class MachineServiceImpl implements MachineService {
 		}
 		if (categoryId != null) {
 			CategoryEntity category = categoryRepository.findById(categoryId).orElseThrow(
-					() -> new BadRequestException("Category not found: " + categoryId)
+					() -> new NotFoundException("Category not found: " + categoryId)
 			);
 			existing.setCategory(category);
 		}
@@ -162,7 +157,7 @@ public class MachineServiceImpl implements MachineService {
 		MachineImageEntity imageToRemove = machine.getImages().stream()
 			.filter(img -> img.getId().equals(imageId))
 			.findFirst()
-			.orElseThrow(() -> new BadRequestException("Image not found: " + imageId));
+			.orElseThrow(() -> new NotFoundException("Image not found: " + imageId));
 
 		boolean wasPrimary = imageToRemove.isPrimary();
 		machine.removeImage(imageToRemove);
@@ -182,7 +177,7 @@ public class MachineServiceImpl implements MachineService {
 		MachineImageEntity newPrimary = machine.getImages().stream()
 			.filter(img -> img.getId().equals(imageId))
 			.findFirst()
-			.orElseThrow(() -> new BadRequestException("Image not found: " + imageId));
+			.orElseThrow(() -> new NotFoundException("Image not found: " + imageId));
 
 		machine.getImages().forEach(img -> img.setPrimary(false));
 		newPrimary.setPrimary(true);
@@ -193,7 +188,7 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	public MaintenanceRecordEntity createMaintenanceRecord(MaintenanceRecordEntity maintenanceRecord,UUID machineId) {
 		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
-				() -> new BadRequestException("Machine not found: " + machineId)
+				() -> new NotFoundException("Machine not found: " + machineId)
 		);
 		maintenanceRecord.setMachine(machine);
 		return maintenanceRecordRepository.save(maintenanceRecord);
@@ -202,32 +197,19 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	public Page<MaintenanceRecordEntity> getMaintenanceHistory(UUID machineId, Pageable pageable) {
 		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
-				() -> new BadRequestException("Machine not found: " + machineId)
+				() -> new NotFoundException("Machine not found: " + machineId)
 		);
 		return maintenanceRecordRepository.findAllByMachine(machine,pageable);
 	}
 
 	@Override
 	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId, int daysAhead, Pageable pageable) {
-		if (!userExists(ownerId)) {
-			throw new BadRequestException("Owner not found: " + ownerId);
+		if (!userGrpcClient.userExists(ownerId)) {
+			throw new NotFoundException("Owner not found: " + ownerId);
 		}
 		LocalDate now = LocalDate.now();
 		LocalDate cutoffDate = now.plusDays(daysAhead);
 		return maintenanceRecordRepository.findUpcomingByOwnerId(ownerId, now, cutoffDate, pageable);
-	}
-
-	private boolean userExists(UUID userId) {
-		try {
-			GetUserRequest request = GetUserRequest.newBuilder()
-					.setId(userId.toString())
-					.build();
-			userServiceStub.getUser(request);
-			return true;
-		} catch (StatusRuntimeException e) {
-			log.warn("User not found {}: {}", userId, e.getStatus());
-			return false;
-		}
 	}
 
 }

@@ -1,7 +1,46 @@
 package com.rentitup.booking_service.repository;
 
 import com.rentitup.booking_service.entities.BookingEntity;
+import com.rentitup.booking_service.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+public interface BookingRepository extends JpaRepository<BookingEntity, UUID> {
+
+	/**
+	 * Check if there's an overlapping booking for a machine in the given date range.
+	 * Two bookings overlap if: existingStart < newEnd AND existingEnd > newStart
+	 * Excludes cancelled bookings.
+	 */
+	@Query("""
+		SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END
+		FROM BookingEntity b
+		WHERE b.machineId = :machineId
+		AND b.status NOT IN (:excludedStatuses)
+		AND b.startDate < :endDate
+		AND b.endDate > :startDate
+		""")
+	boolean existsOverlappingBooking(
+			@Param("machineId") UUID machineId,
+			@Param("startDate") LocalDate startDate,
+			@Param("endDate") LocalDate endDate,
+			@Param("excludedStatuses") List<BookingStatus> excludedStatuses
+	);
+
+	/**
+	 * Convenience method with default excluded statuses (CANCELLED, REJECTED)
+	 */
+	default boolean existsOverlappingBookingForMachine(UUID machineId, LocalDate startDate, LocalDate endDate) {
+		return existsOverlappingBooking(
+				machineId,
+				startDate,
+				endDate,
+				List.of(BookingStatus.CANCELLED, BookingStatus.REJECTED)
+		);
+	}
 }

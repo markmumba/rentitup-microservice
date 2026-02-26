@@ -73,8 +73,11 @@ message CreateBookingRequest {
   string customer_id = 2;
   rentitup.common.Timestamp start_date = 3;
   rentitup.common.Timestamp end_date =4;
-  rentitup.common.Location pickup_location = 5;
-  string special_requirements = 6;
+  optional int32 hours=5;
+  optional int32 weeks=6;
+  optional int32 distance=7;
+  rentitup.common.Location pickup_location = 8;
+  string special_requirements = 9;
 }
 
 message GetBookingRequest {

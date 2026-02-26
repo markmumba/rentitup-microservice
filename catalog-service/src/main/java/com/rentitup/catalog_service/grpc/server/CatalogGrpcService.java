@@ -143,13 +143,25 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 
 	@Override
 	public void getMachine(GetMachineRequest request, StreamObserver<MachineResponse> responseObserver) {
-		UUID id = UUID.fromString(request.getId());
-		MachineEntity machine = machineService.getMachine(id);
-		MachineResponse response = MachineResponse.newBuilder()
-				.setMachine(catalogMapper.toProto(machine))
-				.build();
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+		try {
+			UUID id = UUID.fromString(request.getId());
+			MachineEntity machine = machineService.getMachine(id);
+			MachineResponse response = MachineResponse.newBuilder()
+					.setMachine(catalogMapper.toProto(machine))
+					.build();
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			log.warn("Invalid machine ID format: {}", request.getId());
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID format")
+					.asRuntimeException());
+		} catch (Exception e) {
+			log.error("Failed to get machine: {}", request.getId(), e);
+			responseObserver.onError(Status.NOT_FOUND
+					.withDescription(e.getMessage())
+					.asRuntimeException());
+		}
 	}
 
 	@Override

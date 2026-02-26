@@ -1,8 +1,11 @@
 package com.rentitup.booking_service.grpc.server;
 
+import com.rentitup.booking_service.entities.BookingEntity;
+import com.rentitup.booking_service.mapper.BookingMapper;
 import com.rentitup.booking_service.service.BookingService;
 import com.rentitup.booking_service.service.PaymentService;
 import com.rentitup.booking_service.service.ReviewService;
+import com.rentitup.common.grpc.GrpcExceptionHandler;
 import com.rentitup.shared.proto.booking.*;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -16,11 +19,24 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 	private final BookingService bookingService;
 	private final PaymentService paymentService;
 	private final ReviewService reviewService;
+	private final BookingMapper bookingMapper;
 
 
 	@Override
 	public void createBooking(CreateBookingRequest request, StreamObserver<BookingResponse> responseObserver) {
-		super.createBooking(request, responseObserver);
+		try {
+			log.info("gRPC: Create booking for machine: {}", request.getMachineId());
+
+			BookingEntity savedBooking = bookingService.createBooking(request);
+			BookingResponse response = BookingResponse.newBuilder()
+					.setBooking(bookingMapper.toProto(savedBooking))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "Create booking");
+		}
 	}
 
 	@Override
