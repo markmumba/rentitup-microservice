@@ -4,6 +4,7 @@ package com.rentitup.catalog_service.entities;
 import com.rentitup.catalog_service.common.entites.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class MachineImageEntity extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
