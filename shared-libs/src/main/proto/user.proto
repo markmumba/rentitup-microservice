@@ -7,8 +7,8 @@ option java_outer_classname="UserProto";
 
 import "common.proto";
 
-enum UserType{
-  USER_TYPE_UNSPECIFIED = 0;
+enum Role{
+  ROLE_UNSPECIFIED = 0;
   OWNER=1;
   CUSTOMER=2;
   ADMIN = 3;
@@ -26,7 +26,7 @@ message User {
   string email =2;
   string full_name=3;
   string phone =4;
-  UserType user_type=5;
+  Role role=5;
   KycStatus kyc_status = 6;
   rentitup.common.Timestamp created_at=7;
   rentitup.common.Timestamp verified_at=8;
@@ -43,7 +43,7 @@ message RegisterRequest {
   string password = 2;
   string full_name = 3;
   string phone = 4;
-  UserType user_type = 5;
+  Role role = 5;
 }
 
 message LoginRequest {
@@ -78,7 +78,7 @@ message CreateUserRequest {
   string password = 2;
   string full_name = 3;
   string phone =4;
-  UserType user_type =5;
+  Role role =5;
 }
 
 message GetUserRequest {
@@ -103,7 +103,7 @@ message VerifyUserRequest {
 
 message ListUserRequest {
   rentitup.common.PaginationRequest pagination = 1;
-  optional UserType user_type =2;
+  optional Role role =2;
   optional KycStatus ky_status =3;
 }
 

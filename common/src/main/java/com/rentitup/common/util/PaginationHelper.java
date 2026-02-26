@@ -1,4 +1,4 @@
-package com.rentitup.catalog_service.util;
+package com.rentitup.common.util;
 
 import com.rentitup.shared.proto.common.PaginationRequest;
 import com.rentitup.shared.proto.common.PaginationResponse;

@@ -37,18 +37,7 @@ public class MachineServiceImpl implements MachineService {
 	@GrpcClient(value = "USER-SERVICE",forwardToken = true)
 	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
-	private boolean userExists(UUID userId) {
-		try {
-			GetUserRequest request = GetUserRequest.newBuilder()
-					.setId(userId.toString())
-					.build();
-			userServiceStub.getUser(request);
-			return true;
-		} catch (StatusRuntimeException e) {
-			log.warn("User not found {}: {}", userId, e.getStatus());
-			return false;
-		}
-	}
+
 
 	@Override
 	@Transactional
@@ -226,6 +215,19 @@ public class MachineServiceImpl implements MachineService {
 		LocalDate now = LocalDate.now();
 		LocalDate cutoffDate = now.plusDays(daysAhead);
 		return maintenanceRecordRepository.findUpcomingByOwnerId(ownerId, now, cutoffDate, pageable);
+	}
+
+	private boolean userExists(UUID userId) {
+		try {
+			GetUserRequest request = GetUserRequest.newBuilder()
+					.setId(userId.toString())
+					.build();
+			userServiceStub.getUser(request);
+			return true;
+		} catch (StatusRuntimeException e) {
+			log.warn("User not found {}: {}", userId, e.getStatus());
+			return false;
+		}
 	}
 
 }

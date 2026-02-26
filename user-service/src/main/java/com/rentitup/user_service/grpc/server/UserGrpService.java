@@ -37,7 +37,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 					.password(request.getPassword())
 					.fullName(request.getFullName())
 					.phone(request.getPhone())
-					.role(userMapper.mapUserType(request.getUserType()))
+					.role(userMapper.mapProtoRole(request.getRole()))
 					.build();
 
 			UserEntity created = userService.createUser(user);
@@ -158,7 +158,7 @@ public class UserGrpService extends UserServiceGrpc.UserServiceImplBase {
 			);
 
 			Page<UserEntity> page = userService.listUsers(
-					request.hasUserType() ? userMapper.mapUserType(request.getUserType()) : null,
+					request.hasRole() ? userMapper.mapProtoRole(request.getRole()) : null,
 					request.hasKyStatus() ? userMapper.mapProtoKycStatus(request.getKyStatus()) : null,
 					pageable
 			);

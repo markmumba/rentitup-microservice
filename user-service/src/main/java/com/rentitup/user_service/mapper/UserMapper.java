@@ -29,7 +29,7 @@ public interface UserMapper {
 				.setId(entity.getId().toString())
 				.setEmail(entity.getEmail())
 				.setFullName(entity.getFullName())
-				.setUserType(mapRole(entity.getRole()))
+				.setRole(mapRole(entity.getRole()))
 				.setKycStatus(mapKycStatus(entity.getKycStatus()))
 				.setIsActive(entity.isEnabled());
 
@@ -63,7 +63,7 @@ public interface UserMapper {
 				.setId(entity.getId().toString())
 				.setEmail(entity.getEmail())
 				.setFullName(entity.getFullName())
-				.setUserType(mapRole(entity.getRole()))
+				.setRole(mapRole(entity.getRole()))
 				.setKycStatus(mapKycStatus(entity.getKycStatus()))
 				.setIsActive(entity.isEnabled())
 				.setPasswordHash(entity.getPassword());
@@ -87,22 +87,22 @@ public interface UserMapper {
 		return builder.build();
 	}
 
-	default UserType mapRole(ERole role) {
-		if (role == null) return UserType.USER_TYPE_UNSPECIFIED;
+	default Role mapRole(ERole role) {
+		if (role == null) return Role.ROLE_UNSPECIFIED;
 		return switch (role) {
-			case ADMIN -> UserType.ADMIN;
-			case OWNER -> UserType.OWNER;
-			case CUSTOMER -> UserType.CUSTOMER;
+			case ADMIN -> Role.ADMIN;
+			case OWNER -> Role.OWNER;
+			case CUSTOMER -> Role.CUSTOMER;
 		};
 	}
 
-	default ERole mapUserType(UserType userType) {
-		if (userType == null) return ERole.CUSTOMER;
-		return switch (userType) {
+	default ERole mapProtoRole(Role role) {
+		if (role == null) return ERole.CUSTOMER;
+		return switch (role) {
 			case ADMIN -> ERole.ADMIN;
 			case OWNER -> ERole.OWNER;
 			case CUSTOMER -> ERole.CUSTOMER;
-			case USER_TYPE_UNSPECIFIED, UNRECOGNIZED -> ERole.CUSTOMER;
+			case ROLE_UNSPECIFIED, UNRECOGNIZED -> ERole.CUSTOMER;
 		};
 	}
 

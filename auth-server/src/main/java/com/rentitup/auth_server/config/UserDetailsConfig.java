@@ -35,13 +35,13 @@ public class UserDetailsConfig {
 
 				var user = response.getUser();
 
-				log.info("Found user:{} with type {} ", user.getEmail(), user.getUserType());
+				log.info("Found user:{} with role {} ", user.getEmail(), user.getRole());
 
 				return User.builder()
 						.username(user.getEmail())
 						.password(user.getPasswordHash())
 						.authorities(List.of(
-								new SimpleGrantedAuthority("ROLE_" + user.getUserType().name())
+								new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
 						))
 						.accountExpired(false)
 						.accountLocked(false)

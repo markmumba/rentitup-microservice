@@ -29,6 +29,9 @@ dependencies {
 	// Eureka client for service discovery (compileOnly - services provide it)
 	compileOnly("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
+	// Spring Data Commons for Page, Pageable, PageRequest (compileOnly - services provide it)
+	compileOnly("org.springframework.data:spring-data-commons")
+
 
 
 

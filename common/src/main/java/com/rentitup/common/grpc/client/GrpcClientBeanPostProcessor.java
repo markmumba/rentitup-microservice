@@ -13,9 +13,6 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 
-/**
- * BeanPostProcessor that injects gRPC stubs into fields annotated with @GrpcClient.
- */
 @RequiredArgsConstructor
 public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 

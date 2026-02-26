@@ -11,13 +11,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * gRPC server interceptor that validates JWT tokens and populates the gRPC context
- * with user information.
- *
- * <p>Configure public methods (methods that don't require authentication) via
- * {@link GrpcAuthProperties} or by implementing {@link PublicMethodsProvider}.
- */
 public class GrpcAuthInterceptor implements ServerInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(GrpcAuthInterceptor.class);
@@ -64,7 +57,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 			String token = authHeader.substring(7);
 			try {
 				Jwt jwt = jwtDecoder.decode(token);
-				context = buildAuthenticatedContext(jwt);
+				context = buildAuthenticatedContext(jwt,token);
 				log.debug("Valid token for user: {} (type: {})",
 						jwt.getClaimAsString("email"),
 						jwt.getClaimAsString("token_type"));
@@ -98,30 +91,31 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 		return Contexts.interceptCall(context, call, headers, next);
 	}
 
-	private Context buildAuthenticatedContext(Jwt jwt) {
+	private Context buildAuthenticatedContext(Jwt jwt,String token) {
 		String userId = jwt.getClaimAsString("user_id");
-		String userType = jwt.getClaimAsString("user_role");
+		String role = jwt.getClaimAsString("role");
 		String email = jwt.getClaimAsString("email");
 		String tokenType = jwt.getClaimAsString("token_type");
 
-		// Extract roles from token
 		Set<String> roles = new HashSet<>();
 		Object rolesObj = jwt.getClaim("roles");
 		if (rolesObj instanceof Collection<?> rolesList) {
-			for (Object role : rolesList) {
-				if (role != null) {
-					roles.add(role.toString());
+			for (Object r : rolesList) {
+				if (r != null) {
+					roles.add(r.toString());
 				}
 			}
 		}
 
 		return Context.current()
 				.withValue(GrpcAuthContext.USER_ID, userId)
-				.withValue(GrpcAuthContext.USER_TYPE, userType)
+				.withValue(GrpcAuthContext.ROLE, role)
 				.withValue(GrpcAuthContext.USER_EMAIL, email)
 				.withValue(GrpcAuthContext.TOKEN_TYPE, tokenType)
 				.withValue(GrpcAuthContext.ROLES, roles)
-				.withValue(GrpcAuthContext.IS_AUTHENTICATED, Boolean.TRUE);
+				.withValue(GrpcAuthContext.IS_AUTHENTICATED, Boolean.TRUE)
+				.withValue(GrpcAuthContext.TOKEN, token)
+		;
 	}
 
 	private Context buildUnauthenticatedContext() {

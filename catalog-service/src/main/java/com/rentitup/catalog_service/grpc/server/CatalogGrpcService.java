@@ -8,7 +8,7 @@ import com.rentitup.catalog_service.service.CategoryService;
 import com.rentitup.catalog_service.service.MachineService;
 import com.rentitup.catalog_service.service.StorageService;
 import com.rentitup.catalog_service.specification.MachineSpecification;
-import com.rentitup.catalog_service.util.PaginationHelper;
+import com.rentitup.common.util.PaginationHelper;
 import com.rentitup.shared.proto.catalog.*;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;

@@ -56,7 +56,7 @@ public class TokenCustomizer {
 						).getUser();
 
 						context.getClaims().claim("user_id", user.getId());
-						context.getClaims().claim("user_role", user.getUserType().name());
+						context.getClaims().claim("role", user.getRole().name());
 						context.getClaims().claim("email", user.getEmail());
 
 						log.debug("Created user token for : {} ({})", username, user.getEmail());

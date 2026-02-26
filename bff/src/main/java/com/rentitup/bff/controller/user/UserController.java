@@ -73,7 +73,7 @@ public class UserController {
 	public ResponseEntity<?> listUsers(
 			@Parameter(description = "Page number (1-based)") @RequestParam(defaultValue = "1") int page,
 			@Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
-			@Parameter(description = "Filter by user type") @RequestParam(required = false) UserType userType,
+			@Parameter(description = "Filter by role") @RequestParam(required = false) Role role,
 			@Parameter(description = "Filter by KYC status") @RequestParam(required = false) KycStatus kycStatus) {
 		log.info("REST: List users - page: {}, size: {}", page, size);
 
@@ -83,7 +83,7 @@ public class UserController {
 						.setSize(size)
 						.build());
 
-		if (userType != null) builder.setUserType(userType);
+		if (role != null) builder.setRole(role);
 		if (kycStatus != null) builder.setKyStatus(kycStatus);
 
 		ListUsersResponse response = userServiceStub.listUsers(builder.build());
