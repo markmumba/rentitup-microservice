@@ -1,11 +1,19 @@
 package com.rentitup.booking_service.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum BookingStatus {
-	PENDING,
-	CONFIRMED,
-	PAID,
-	ONGOING,
-	COMPLETED,
-	CANCELLED,
-	REJECTED
+	PENDING(true),
+	CONFIRMED(true),
+	PAID(true),
+	ONGOING(false),
+	COMPLETED(false),
+	CANCELLED(false),
+	REJECTED(false);
+
+	private final boolean cancellable;
+
 }

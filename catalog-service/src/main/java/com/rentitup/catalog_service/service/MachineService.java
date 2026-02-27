@@ -22,4 +22,6 @@ public interface MachineService {
 	MaintenanceRecordEntity createMaintenanceRecord(MaintenanceRecordEntity maintenanceRecord, UUID machineId);
 	Page<MaintenanceRecordEntity> getMaintenanceHistory(UUID machineId, Pageable pageable);
 	Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId,int daysAhead, Pageable pageable);
+
+	List<UUID> getMachineIdsByOwner(UUID ownerId);
 }

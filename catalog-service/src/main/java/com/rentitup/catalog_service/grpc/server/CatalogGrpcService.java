@@ -22,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -316,6 +317,18 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 		}
 	}
 
+	@Override
+	public void getMachineIdsByOwner(GetMachineIdsRequest request, StreamObserver<GetMachineIdsResponse> responseObserver) {
+		UUID ownerId = UUID.fromString(request.getOwnerId());
+		List<UUID> machineIds = machineService.getMachineIdsByOwner(ownerId);
+		GetMachineIdsResponse response = GetMachineIdsResponse.newBuilder()
+				.addAllMachineIds(machineIds.stream()
+						.map(UUID::toString).toList())
+				.build();
+		responseObserver.onNext(response);
+		responseObserver.onCompleted();
+	}	
+
 	private void getAllMachines(StreamObserver<ListMachinesResponse> responseObserver, Pageable pageable, Specification<MachineEntity> spec) {
 		Page<MachineEntity> page = machineService.findAll(spec, pageable);
 
@@ -328,6 +341,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 		responseObserver.onNext(responseBuilder.build());
 		responseObserver.onCompleted();
 	}
+
 
 	@Override
 	public void getUploadUrl(GetUploadUrlRequest request, StreamObserver<GetUploadUrlResponse> responseObserver) {

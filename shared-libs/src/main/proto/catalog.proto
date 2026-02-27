@@ -309,6 +309,13 @@ message GetMachineBatchRequest {
   repeated string machine_ids =1;
 }
 
+message GetMachineIdsRequest {
+  string owner_id = 1;
+}
+message GetMachineIdsResponse {
+  repeated string machine_ids =1;
+}
+
 message GetMachinesBatchResponse {
   map<string, Machine> machines = 1;
 }
@@ -349,6 +356,7 @@ service CatalogService {
   // for the booking service to check availability
   rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
   rpc UpdateMachineStatus(UpdateMachineRatingRequest) returns (MachineResponse);
+  rpc GetMachineIdsByOwner(GetMachineIdsRequest) returns (GetMachineIdsResponse);
 
   rpc GetMachinesBatch(GetMachineBatchRequest) returns (GetMachinesBatchResponse);
 

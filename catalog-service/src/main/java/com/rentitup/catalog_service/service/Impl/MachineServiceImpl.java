@@ -212,4 +212,11 @@ public class MachineServiceImpl implements MachineService {
 		return maintenanceRecordRepository.findUpcomingByOwnerId(ownerId, now, cutoffDate, pageable);
 	}
 
+	@Override
+	public List<UUID> getMachineIdsByOwner(UUID ownerId) {
+		return machineRepository.findAllByOwnerId(ownerId).stream()
+				.map(MachineEntity::getId)
+				.toList();
+	}
+
 }
