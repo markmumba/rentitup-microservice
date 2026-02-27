@@ -48,5 +48,4 @@ public interface BookingRepository extends JpaRepository<BookingEntity, UUID> {
 
 	Page<BookingEntity> findByMachineId(UUID machineId, Pageable pageable);
 
-	Page<BookingEntity> findByOwnerIdAndStatus(UUID ownerId, Pageable pageable, BookingStatus status);
 }

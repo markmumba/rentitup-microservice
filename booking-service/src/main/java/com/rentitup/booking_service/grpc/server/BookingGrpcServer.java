@@ -1,7 +1,9 @@
 package com.rentitup.booking_service.grpc.server;
 
 import com.rentitup.booking_service.entities.BookingEntity;
+import com.rentitup.booking_service.entities.PaymentEntity;
 import com.rentitup.booking_service.enums.BookingStatus;
+import com.rentitup.booking_service.enums.PaymentType;
 import com.rentitup.booking_service.mapper.BookingMapper;
 import com.rentitup.booking_service.service.BookingService;
 import com.rentitup.booking_service.service.PaymentService;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -144,6 +147,7 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 	public void listBookingsForOwner(ListBookingsForOwnerRequest request,
 			StreamObserver<ListBookingsResponse> responseObserver) {
 		try {
+			log.info("gRPC: List bookings for owner: {}", request.getOwnerId());
 			UUID ownerId = UUID.fromString(request.getOwnerId());
 			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
 			BookingStatus status = bookingMapper.mapProtoStatus(request.getStatus());
@@ -152,6 +156,9 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 					.setPagination(PaginationHelper.toProto(page));
 			page.getContent()
 					.forEach(bookingEntity -> bookingsBuilder.addBookings(bookingMapper.toProto(bookingEntity)));
+
+			responseObserver.onNext(bookingsBuilder.build());
+			responseObserver.onCompleted();
 		} catch (Exception e) {
 			GrpcExceptionHandler.handleException(e, responseObserver, "listBookingsForOwner");
 		}
@@ -159,34 +166,136 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 
 	@Override
 	public void createPayment(CreatePaymentRequest request, StreamObserver<PaymentResponse> responseObserver) {
+		try {
+			log.info("gRPC: Create payment for booking: {}", request.getBookingId());
+			UUID bookingId = UUID.fromString(request.getBookingId());
+			BigDecimal amount = new BigDecimal(request.getAmount().getAmount());
+			String currency = request.getAmount().getCurrency();
+			String transactionId = request.getTransactionId();
+			PaymentType type = bookingMapper.mapPaymentType(request.getPaymentType());
 
+			if (type == null) {
+				throw new IllegalArgumentException("Payment type is required");
+			}
+
+			PaymentEntity payment = paymentService.createPaymentEntry(bookingId, amount, currency, type, transactionId);
+
+			PaymentResponse response = PaymentResponse.newBuilder()
+					.setPayment(bookingMapper.toProto(payment))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "createPayment");
+		}
 	}
 
 	@Override
 	public void updatePaymentStatus(UpdatePaymentStatusRequest request,
 			StreamObserver<PaymentResponse> responseObserver) {
-		super.updatePaymentStatus(request, responseObserver);
+		try {
+			log.info("gRPC: Update payment status: {}", request.getId());
+			UUID paymentId = UUID.fromString(request.getId());
+			com.rentitup.booking_service.enums.PaymentStatus status =
+					bookingMapper.mapProtoPaymentStatus(request.getStatus());
+
+			PaymentEntity payment = paymentService.updatePaymentStatus(paymentId, status);
+
+			PaymentResponse response = PaymentResponse.newBuilder()
+					.setPayment(bookingMapper.toProto(payment))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "updatePaymentStatus");
+		}
 	}
 
 	@Override
 	public void getPaymentsByBooking(GetPaymentsByBookingRequest request,
 			StreamObserver<PaymentsResponse> responseObserver) {
-		super.getPaymentsByBooking(request, responseObserver);
+		try {
+			log.info("gRPC: Get payments for booking: {}", request.getBookingId());
+			UUID bookingId = UUID.fromString(request.getBookingId());
+
+			var payments = paymentService.getPaymentsByBooking(bookingId);
+
+			PaymentsResponse.Builder responseBuilder = PaymentsResponse.newBuilder();
+			payments.forEach(payment -> responseBuilder.addPayments(bookingMapper.toProto(payment)));
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "getPaymentsByBooking");
+		}
 	}
 
 	@Override
 	public void createReview(CreateReviewRequest request, StreamObserver<ReviewResponse> responseObserver) {
-		super.createReview(request, responseObserver);
+		try {
+			log.info("gRPC: Create review for booking: {}", request.getBookingId());
+			UUID bookingId = UUID.fromString(request.getBookingId());
+			UUID reviewerId = UUID.fromString(request.getReviewerId());
+
+			var review = reviewService.createReview(
+					bookingId,
+					reviewerId,
+					request.getMachineRating(),
+					request.getOwnerRating(),
+					request.getComment()
+			);
+
+			ReviewResponse response = ReviewResponse.newBuilder()
+					.setReview(bookingMapper.toProto(review))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "createReview");
+		}
 	}
 
 	@Override
 	public void getReviewsByMachine(GetReviewsByMachineRequest request,
 			StreamObserver<ReviewsResponse> responseObserver) {
-		super.getReviewsByMachine(request, responseObserver);
+		try {
+			log.info("gRPC: Get reviews for machine: {}", request.getMachineId());
+			UUID machineId = UUID.fromString(request.getMachineId());
+			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
+
+			var page = reviewService.getReviewsByMachine(machineId, pageable);
+
+			ReviewsResponse.Builder responseBuilder = ReviewsResponse.newBuilder()
+					.setPagination(PaginationHelper.toProto(page));
+			page.getContent().forEach(review -> responseBuilder.addReviews(bookingMapper.toProto(review)));
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "getReviewsByMachine");
+		}
 	}
 
 	@Override
 	public void getReviewsByOwner(GetReviewsByOwnerRequest request, StreamObserver<ReviewsResponse> responseObserver) {
-		super.getReviewsByOwner(request, responseObserver);
+		try {
+			log.info("gRPC: Get reviews for owner: {}", request.getOwnerId());
+			UUID ownerId = UUID.fromString(request.getOwnerId());
+			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
+
+			var page = reviewService.getReviewsByOwner(ownerId, pageable);
+
+			ReviewsResponse.Builder responseBuilder = ReviewsResponse.newBuilder()
+					.setPagination(PaginationHelper.toProto(page));
+			page.getContent().forEach(review -> responseBuilder.addReviews(bookingMapper.toProto(review)));
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "getReviewsByOwner");
+		}
 	}
 }

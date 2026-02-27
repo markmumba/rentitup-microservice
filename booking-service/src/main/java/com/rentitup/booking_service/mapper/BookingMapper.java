@@ -1,8 +1,15 @@
 package com.rentitup.booking_service.mapper;
 
 import com.rentitup.booking_service.entities.BookingEntity;
+import com.rentitup.booking_service.entities.PaymentEntity;
+import com.rentitup.booking_service.entities.ReviewEntity;
 import com.rentitup.booking_service.enums.BookingStatus;
+import com.rentitup.booking_service.enums.PaymentMethod;
+import com.rentitup.booking_service.enums.PaymentStatus;
+import com.rentitup.booking_service.enums.PaymentType;
 import com.rentitup.shared.proto.booking.Booking;
+import com.rentitup.shared.proto.booking.Payment;
+import com.rentitup.shared.proto.booking.Review;
 import com.rentitup.shared.proto.common.Location;
 import com.rentitup.shared.proto.common.Money;
 import com.rentitup.shared.proto.common.Timestamp;
@@ -100,6 +107,7 @@ public interface BookingMapper {
 				.build();
 	}
 
+
 	default com.rentitup.shared.proto.booking.BookingStatus mapStatus(BookingStatus status) {
 		if (status == null) return com.rentitup.shared.proto.booking.BookingStatus.BOOKING_STATUS_UNSPECIFIED;
 		return switch (status) {
@@ -120,6 +128,113 @@ public interface BookingMapper {
 			case BOOKING_COMPLETED -> BookingStatus.COMPLETED;
 			case BOOKING_CANCELLED -> BookingStatus.CANCELLED;
 			case BOOKING_STATUS_UNSPECIFIED, UNRECOGNIZED -> BookingStatus.PENDING;
+		};
+	}
+	default PaymentType mapPaymentType(com.rentitup.shared.proto.booking.PaymentType type) {
+		if (type == null) return null;
+		return switch (type) {
+			case PAYMENT_TYPE_UNSPECIFIED -> null;
+			case DEPOSIT ->  PaymentType.DEPOSIT;
+			case SECURITY_DEPOSIT ->   PaymentType.SECURITY_DEPOSIT;
+			case FULL_PAYMENT ->   PaymentType.FULL_PAYMENT;
+			case UNRECOGNIZED -> null;
+		};
+	}
+	default com.rentitup.shared.proto.booking.PaymentType mapPaymentType(PaymentType type) {
+		if (type == null) return null;
+		return switch (type) {
+			case DEPOSIT ->  com.rentitup.shared.proto.booking.PaymentType.DEPOSIT;
+			case SECURITY_DEPOSIT ->   com.rentitup.shared.proto.booking.PaymentType.SECURITY_DEPOSIT;
+			case FULL_PAYMENT -> com.rentitup.shared.proto.booking.PaymentType.FULL_PAYMENT;
+		};
+	}
+
+	default Payment toProto(PaymentEntity entity) {
+		if (entity == null) return null;
+
+		Payment.Builder builder = Payment.newBuilder()
+				.setId(entity.getId().toString())
+				.setBookingId(entity.getBooking().getId().toString())
+				.setAmount(mapMoney(entity.getAmount(), entity.getCurrency()))
+				.setPaymentType(mapPaymentType(entity.getPaymentType()))
+				.setStatus(mapPaymentStatus(entity.getStatus()));
+
+		if (entity.getTransactionId() != null) {
+			builder.setIdempotencyKey(entity.getTransactionId());
+		}
+
+		if (entity.getCompletedAt() != null) {
+			builder.setPaidAt(fromInstantToTimestamp(entity.getCompletedAt()));
+		}
+
+		return builder.build();
+	}
+
+	default Review toProto(ReviewEntity entity) {
+		if (entity == null) return null;
+
+		Review.Builder builder = Review.newBuilder()
+				.setId(entity.getId().toString())
+				.setBookingId(entity.getBooking().getId().toString())
+				.setReviewerId(entity.getReviewerId().toString())
+				.setMachineRating(entity.getMachineRating())
+				.setOwnerRating(entity.getOwnerRating());
+
+		if (entity.getComment() != null) {
+			builder.setComment(entity.getComment());
+		}
+
+		if (entity.getCreatedAt() != null) {
+			builder.setCreatedAt(fromLocalDateTimeToTimestamp(entity.getCreatedAt()));
+		}
+
+		return builder.build();
+	}
+
+	default Timestamp fromInstantToTimestamp(Instant instant) {
+		if (instant == null) return Timestamp.getDefaultInstance();
+		return Timestamp.newBuilder()
+				.setSeconds(instant.getEpochSecond())
+				.setNanos(instant.getNano())
+				.build();
+	}
+
+	default com.rentitup.shared.proto.booking.PaymentStatus mapPaymentStatus(PaymentStatus status) {
+		if (status == null) return com.rentitup.shared.proto.booking.PaymentStatus.PAYMENT_STATUS_UNSPECIFIED;
+		return switch (status) {
+			case PENDING -> com.rentitup.shared.proto.booking.PaymentStatus.PAYMENT_PENDING;
+			case COMPLETED -> com.rentitup.shared.proto.booking.PaymentStatus.PAYMENT_COMPLETED;
+			case FAILED -> com.rentitup.shared.proto.booking.PaymentStatus.PAYMENT_FAILED;
+		};
+	}
+
+	default PaymentStatus mapProtoPaymentStatus(com.rentitup.shared.proto.booking.PaymentStatus status) {
+		if (status == null) return PaymentStatus.PENDING;
+		return switch (status) {
+			case PAYMENT_PENDING -> PaymentStatus.PENDING;
+			case PAYMENT_COMPLETED -> PaymentStatus.COMPLETED;
+			case PAYMENT_FAILED, PAYMENT_REFUNDED -> PaymentStatus.FAILED;
+			case PAYMENT_STATUS_UNSPECIFIED, UNRECOGNIZED -> PaymentStatus.PENDING;
+		};
+	}
+
+	default com.rentitup.shared.proto.booking.PaymentMethod mapPaymentMethod(PaymentMethod method) {
+		if (method == null) return com.rentitup.shared.proto.booking.PaymentMethod.PAYMENT_METHOD_UNSPECIFIED;
+		return switch (method) {
+			case BANK_TRANSFER -> com.rentitup.shared.proto.booking.PaymentMethod.BANK_TRANSFER;
+			case MPESA -> com.rentitup.shared.proto.booking.PaymentMethod.MPESA;
+			case CASH -> com.rentitup.shared.proto.booking.PaymentMethod.CASH;
+			case CARD -> com.rentitup.shared.proto.booking.PaymentMethod.PAYMENT_METHOD_UNSPECIFIED;
+		};
+	}
+
+	default PaymentMethod mapProtoPaymentMethod(com.rentitup.shared.proto.booking.PaymentMethod method) {
+		if (method == null) return PaymentMethod.MPESA;
+		return switch (method) {
+			case BANK_TRANSFER -> PaymentMethod.BANK_TRANSFER;
+			case MPESA -> PaymentMethod.MPESA;
+			case CASH -> PaymentMethod.CASH;
+			case PAYMENT_METHOD_UNSPECIFIED, UNRECOGNIZED -> PaymentMethod.MPESA;
 		};
 	}
 }

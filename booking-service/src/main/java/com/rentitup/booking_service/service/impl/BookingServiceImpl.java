@@ -189,7 +189,7 @@ public class BookingServiceImpl implements BookingService {
 		if (bookingToCancel.getStatus() == BookingStatus.CANCELLED) {
 			throw new BadRequestException("Booking is already cancelled");
 		}
-		if (bookingToCancel.getStatus().isCancellable()) {
+		if (!bookingToCancel.getStatus().isCancellable()) {
 			throw new ConflictException("Cannot cancel a booking in this status: " + bookingToCancel.getStatus());
 		}
 		if (bookingToCancel.getAmountPaid() != null || bookingToCancel.getSecurityDeposit() != null) {

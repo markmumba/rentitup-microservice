@@ -24,6 +24,13 @@ enum PaymentType {
   SECURITY_DEPOSIT = 3;
 }
 
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED=0;
+  BANK_TRANSFER=1;
+  MPESA=2;
+  CASH=3;
+}
+
 enum PaymentStatus {
   PAYMENT_STATUS_UNSPECIFIED = 0;
   PAYMENT_PENDING = 1;
@@ -122,6 +129,7 @@ message CreatePaymentRequest {
   string booking_id = 1;
   rentitup.common.Money amount = 2;
   PaymentType payment_type = 3;
+  string transaction_id=4;
 }
 
 message UpdatePaymentStatusRequest {
