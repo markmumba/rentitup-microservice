@@ -11,24 +11,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.grpc.server.GlobalServerInterceptor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 
-/**
- * Auto-configuration for gRPC authentication interceptor.
- *
- * <p>The interceptor is automatically registered when:
- * <ul>
- *   <li>A JwtDecoder bean is available</li>
- *   <li>grpc.auth.enabled is true (default)</li>
- * </ul>
- *
- * <p>Configure public methods in application.yml:
- * <pre>
- * grpc:
- *   auth:
- *     public-methods:
- *       - "rentitup.catalog.CatalogService/ListCategories"
- *       - "rentitup.user.UserService/GetUser"
- * </pre>
- */
+
 @AutoConfiguration
 @EnableConfigurationProperties(GrpcAuthProperties.class)
 @ConditionalOnClass(name = "org.springframework.grpc.server.GlobalServerInterceptor")

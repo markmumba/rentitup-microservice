@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
 
 import static com.rentitup.common.grpc.server.GrpcAuthContext.TOKEN;
 
+@Deprecated
 public class BearerTokenCallCredentials extends CallCredentials {
 
 	private static final Metadata.Key<String> AUTHORIZATION_KEY =

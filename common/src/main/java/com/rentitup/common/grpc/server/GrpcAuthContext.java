@@ -17,6 +17,7 @@ public final class GrpcAuthContext {
 	public static final Context.Key<Boolean> IS_AUTHENTICATED = Context.key("is-authenticated");
 	public static final Context.Key<Set<String>> ROLES = Context.key("roles");
 	public static final Context.Key<String> TOKEN = Context.key("token");
+	public static final Context.Key<String> CLIENT_ID = Context.key("client-id");
 
 	public static boolean isAuthenticated() {
 		Boolean authenticated = IS_AUTHENTICATED.get();

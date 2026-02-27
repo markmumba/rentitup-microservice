@@ -28,6 +28,8 @@ public class SecurityConfig {
 						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/machines/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/v1/reviews/machine/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/v1/reviews/owner/**").permitAll()
 						.anyRequest().authenticated()
 				)
 				.oauth2ResourceServer(oauth2 -> oauth2

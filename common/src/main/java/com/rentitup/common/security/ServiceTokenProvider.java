@@ -16,8 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Deprecated
-@RequiredArgsConstructor
 @Slf4j
 public class ServiceTokenProvider {
 
@@ -26,9 +24,18 @@ public class ServiceTokenProvider {
 	private final String tokenUri;
 	private final RestTemplate restTemplate;
 
+
 	private final Map<String,CachedToken> tokenCache = new ConcurrentHashMap<>();
 
 	private static final long REFRESH_BUFFER_SECONDS = 60;
+
+	public ServiceTokenProvider(String clientId, String clientSecret, String tokenUri) {
+		this.clientId = clientId;
+		this.clientSecret = clientSecret;
+		this.tokenUri = tokenUri;
+		this.restTemplate = new RestTemplate();
+	}
+
 
 	public String getToken(Set<String> scopes) {
 		String scopeKey = String.join(" ", scopes);

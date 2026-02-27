@@ -2,7 +2,6 @@ package com.rentitup.common.grpc.client;
 
 import com.rentitup.common.grpc.GrpcChannelFactory;
 import io.grpc.Channel;
-import io.grpc.stub.AbstractStub;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
@@ -13,11 +12,11 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 
+
 @RequiredArgsConstructor
 public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 
 	private static final Logger log = LoggerFactory.getLogger(GrpcClientBeanPostProcessor.class);
-	private static final BearerTokenCallCredentials TOKEN_CREDENTIALS = new BearerTokenCallCredentials();
 
 	private final GrpcChannelFactory channelFactory;
 
@@ -29,15 +28,14 @@ public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 			GrpcClient annotation = field.getAnnotation(GrpcClient.class);
 			if (annotation != null) {
 				String serviceName = annotation.value();
-				boolean forwardToken = annotation.forwardToken();
 
-				Object stub = createStub(field.getType(), serviceName, forwardToken);
+				Object stub = createStub(field.getType(), serviceName);
 
 				if (stub != null) {
 					ReflectionUtils.makeAccessible(field);
 					ReflectionUtils.setField(field, bean, stub);
-					log.debug("Injected gRPC client stub for service '{}' into {}.{} (forwardToken={})",
-							serviceName, clazz.getSimpleName(), field.getName(), forwardToken);
+					log.debug("Injected gRPC client stub for service '{}' into {}.{}",
+							serviceName, clazz.getSimpleName(), field.getName());
 				}
 			}
 		});
@@ -45,7 +43,7 @@ public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 		return bean;
 	}
 
-	private Object createStub(Class<?> stubClass, String serviceName, boolean forwardToken) {
+	private Object createStub(Class<?> stubClass, String serviceName) {
 		try {
 			Channel channel = channelFactory.getChannel(serviceName);
 
@@ -64,14 +62,7 @@ public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 			}
 
 			Method factoryMethod = grpcServiceClass.getMethod(factoryMethodName, Channel.class);
-			Object stub = factoryMethod.invoke(null, channel);
-
-			// Apply token forwarding if requested
-			if (forwardToken && stub instanceof AbstractStub<?> abstractStub) {
-				stub = abstractStub.withCallCredentials(TOKEN_CREDENTIALS);
-			}
-
-			return stub;
+			return factoryMethod.invoke(null, channel);
 
 		} catch (Exception e) {
 			log.error("Failed to create gRPC stub for service '{}': {}", serviceName, e.getMessage(), e);

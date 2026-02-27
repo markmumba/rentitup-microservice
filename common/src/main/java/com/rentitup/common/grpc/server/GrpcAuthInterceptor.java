@@ -1,6 +1,7 @@
 package com.rentitup.common.grpc.server;
 
 import io.grpc.*;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -58,6 +59,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 			try {
 				Jwt jwt = jwtDecoder.decode(token);
 				context = buildAuthenticatedContext(jwt,token);
+
 				log.debug("Valid token for user: {} (type: {})",
 						jwt.getClaimAsString("email"),
 						jwt.getClaimAsString("token_type"));
@@ -97,6 +99,27 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 		String email = jwt.getClaimAsString("email");
 		String tokenType = jwt.getClaimAsString("token_type");
 
+		Context initial = Context.current()
+				.withValue(GrpcAuthContext.TOKEN, token)
+				.withValue(GrpcAuthContext.TOKEN_TYPE, tokenType)
+				.withValue(GrpcAuthContext.IS_AUTHENTICATED,Boolean.TRUE);
+
+		if ("USER".equals(tokenType)){
+			initial
+					.withValue(GrpcAuthContext.USER_ID, userId)
+					.withValue(GrpcAuthContext.ROLE, role)
+					.withValue(GrpcAuthContext.USER_EMAIL, email);
+
+			log.debug("Authenticated user: {} ({})",
+					jwt.getClaimAsString("email"),
+					jwt.getClaimAsString("user_type"));
+
+		}else if ("SERVER".equals(tokenType)){
+			initial
+					.withValue(GrpcAuthContext.CLIENT_ID, userId);
+			log.debug("Authenticated service: {}", jwt.getClaimAsString("client_id"));
+		}
+
 		Set<String> roles = new HashSet<>();
 		Object rolesObj = jwt.getClaim("roles");
 		if (rolesObj instanceof Collection<?> rolesList) {
@@ -107,15 +130,8 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 			}
 		}
 
-		return Context.current()
-				.withValue(GrpcAuthContext.USER_ID, userId)
-				.withValue(GrpcAuthContext.ROLE, role)
-				.withValue(GrpcAuthContext.USER_EMAIL, email)
-				.withValue(GrpcAuthContext.TOKEN_TYPE, tokenType)
-				.withValue(GrpcAuthContext.ROLES, roles)
-				.withValue(GrpcAuthContext.IS_AUTHENTICATED, Boolean.TRUE)
-				.withValue(GrpcAuthContext.TOKEN, token)
-		;
+		initial.withValue(GrpcAuthContext.ROLES, roles);
+		return initial;
 	}
 
 	private Context buildUnauthenticatedContext() {
