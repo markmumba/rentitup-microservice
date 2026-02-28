@@ -28,7 +28,7 @@ import java.time.ZoneOffset;
 @Tag(name = "Bookings", description = "Booking management endpoints")
 public class BookingController {
 
-	@GrpcClient(value = "BOOKING-SERVICE", forwardToken = true)
+	@GrpcClient("BOOKING-SERVICE")
 	private BookingServiceGrpc.BookingServiceBlockingStub bookingStub;
 
 	@PostMapping

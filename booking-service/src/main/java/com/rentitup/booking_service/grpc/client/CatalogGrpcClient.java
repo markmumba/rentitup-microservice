@@ -11,7 +11,7 @@ import java.util.UUID;
 @Service
 public class CatalogGrpcClient {
 
-	@GrpcClient(value = "CATALOG-SERVICE", forwardToken = true)
+	@GrpcClient("CATALOG-SERVICE")
 	private CatalogServiceGrpc.CatalogServiceBlockingStub client;
 
 	public Machine getMachine(String machineId) {

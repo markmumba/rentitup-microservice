@@ -43,8 +43,11 @@ import java.util.UUID;
 @EnableWebSecurity
 public class AuthorizationServerConfig {
 
-	@Value("${auth.rediretUri}")
+	@Value("${auth.redirect-uri}")
 	private String redirectUri;
+
+	@Value("${auth.external-url}")
+	private String externalUrl;
 
 	/**
 	 * For later reading and understanding :
@@ -121,12 +124,30 @@ public class AuthorizationServerConfig {
 						.build())
 
 				.build();
-		RegisteredClient catalogService = RegisteredClient.withId(UUID.randomUUID().toString())
-				.clientId("catalog-service")
-				.clientSecret(passwordEncoder.encode("catalog-service-secret"))
+		// BFF service client - for service-to-service calls (public endpoints like registration)
+		RegisteredClient bffService = RegisteredClient.withId(UUID.randomUUID().toString())
+				.clientId("bff-service")
+				.clientSecret(passwordEncoder.encode("bff-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 				.scope("internal")
+				.scope("user:read")
+				.scope("user:write")
+				.scope("catalog:read")
+				.scope("booking:read")
+				.scope("booking:write")
+				.tokenSettings(TokenSettings.builder()
+						.accessTokenTimeToLive(Duration.ofMinutes(30))
+						.build())
+				.build();
+
+		RegisteredClient catalogService = RegisteredClient.withId(UUID.randomUUID().toString())
+				.clientId("catalog-service")
+				.clientSecret(passwordEncoder.encode("catalog-secret"))
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+				.scope("internal")
+				.scope("user:read")
 				.scope("machine:read")
 				.scope("machine:write")
 				.tokenSettings(TokenSettings.builder()
@@ -136,7 +157,7 @@ public class AuthorizationServerConfig {
 
 		RegisteredClient userService = RegisteredClient.withId(UUID.randomUUID().toString())
 				.clientId("user-service")
-				.clientSecret(passwordEncoder.encode("user-service-secret"))
+				.clientSecret(passwordEncoder.encode("user-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 				.scope("internal")
@@ -147,11 +168,27 @@ public class AuthorizationServerConfig {
 						.build())
 				.build();
 
+		RegisteredClient bookingService = RegisteredClient.withId(UUID.randomUUID().toString())
+				.clientId("booking-service")
+				.clientSecret(passwordEncoder.encode("booking-secret"))
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+				.scope("internal")
+				.scope("user:read")
+				.scope("catalog:read")
+				.scope("booking:read")
+				.scope("booking:write")
+				.tokenSettings(TokenSettings.builder()
+						.accessTokenTimeToLive(Duration.ofMinutes(30))
+						.build())
+				.build();
+
 		return new InMemoryRegisteredClientRepository(
 				bff,
+				bffService,
 				catalogService,
-				userService
-
+				userService,
+				bookingService
 		);
 	}
 
@@ -197,7 +234,7 @@ public class AuthorizationServerConfig {
 	@Bean
 	public AuthorizationServerSettings authorizationServerSettings() {
 		return AuthorizationServerSettings.builder()
-				.issuer("http://localhost:9000")
+				.issuer(externalUrl)
 				.build();
 	}
 

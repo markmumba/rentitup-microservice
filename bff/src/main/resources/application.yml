@@ -7,25 +7,22 @@ spring:
 
   security:
     oauth2:
+      # Resource server - validates incoming user JWTs
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_SERVER_URL:http://localhost:9000}
+          jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/jwks
+      # Client - gets service tokens for public endpoints (e.g., registration)
       client:
         registration:
           auth-server:
-            client-id: bff-gateway
-            client-secret: bff-gateway-secret
-            authorization-grant-type: authorization_code
-            redirect_uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-            scope:
-              - openid
-              - profile
-              - read
-              - write
+            client-id: bff-service
+            client-secret: bff-secret
+            authorization-grant-type: client_credentials
+            scope: internal,user:write,user:read,catalog:read
         provider:
           auth-server:
-            issuer-uri: http://localhost:9000
-    resourceserver:
-       jwt:
-         issuer-uri: http://localhost:9000
-         jwk-set-uri: http://localhost:9000/oauth2/jwks
+            token-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/token
 
 eureka:
   client:

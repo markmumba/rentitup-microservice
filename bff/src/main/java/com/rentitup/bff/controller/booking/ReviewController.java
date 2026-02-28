@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Reviews", description = "Review management endpoints")
 public class ReviewController {
 
-	@GrpcClient(value = "BOOKING-SERVICE", forwardToken = true)
+	@GrpcClient("BOOKING-SERVICE")
 	private BookingServiceGrpc.BookingServiceBlockingStub bookingStub;
 
 	@PostMapping

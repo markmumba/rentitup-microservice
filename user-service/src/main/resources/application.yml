@@ -36,8 +36,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9000
-          jwk-set-uri: http://localhost:9000/oauth2/jwks
+          issuer-uri: ${AUTH_SERVER_URL:http://localhost:9000}
+          jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/jwks
 
 grpc:
   auth:

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Payments", description = "Payment management endpoints")
 public class PaymentController {
 
-	@GrpcClient(value = "BOOKING-SERVICE", forwardToken = true)
+	@GrpcClient("BOOKING-SERVICE")
 	private BookingServiceGrpc.BookingServiceBlockingStub bookingStub;
 
 	@PostMapping

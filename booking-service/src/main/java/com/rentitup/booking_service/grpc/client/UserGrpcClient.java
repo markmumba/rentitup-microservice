@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public class UserGrpcClient {
 
-	@GrpcClient(value = "USER-SERVICE",forwardToken = true)
+	@GrpcClient("USER-SERVICE")
 	private UserServiceGrpc.UserServiceBlockingStub client;
 
 

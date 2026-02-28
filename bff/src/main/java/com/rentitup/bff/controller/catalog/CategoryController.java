@@ -21,7 +21,7 @@ import java.util.List;
 @Tag(name = "Categories", description = "Category management endpoints")
 public class CategoryController {
 
-	@GrpcClient(value = "CATALOG-SERVICE", forwardToken = true)
+	@GrpcClient("CATALOG-SERVICE")
 	private CatalogServiceGrpc.CatalogServiceBlockingStub catalogServiceStub;
 
 	@Operation(summary = "Create a new category", description = "Creates a new machine category")

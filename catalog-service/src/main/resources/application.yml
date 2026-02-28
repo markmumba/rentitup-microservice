@@ -23,10 +23,22 @@ spring:
 
   security:
     oauth2:
+      # Resource server - validates incoming JWTs
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9000
-          jwk-set-uri: http://localhost:9000/oauth2/jwks
+          issuer-uri: ${AUTH_SERVER_URL:http://localhost:9000}
+          jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/jwks
+      # Client - gets service tokens for inter-service calls
+      client:
+        registration:
+          auth-server:
+            client-id: catalog-service
+            client-secret: catalog-secret
+            authorization-grant-type: client_credentials
+            scope: internal,user:read
+        provider:
+          auth-server:
+            token-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/token
 
   flyway:
     enabled: true

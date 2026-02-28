@@ -14,7 +14,7 @@ import java.util.UUID;
 @Slf4j
 public class UserGrpcClient {
 
-	@GrpcClient(value = "USER-SERVICE",forwardToken = true)
+	@GrpcClient("USER-SERVICE")
 	private UserServiceGrpc.UserServiceBlockingStub client;
 
 	public boolean userExists(UUID userId) {

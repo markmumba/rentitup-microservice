@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users", description = "User management endpoints")
 public class UserController {
 
-	@GrpcClient(value = "USER-SERVICE", forwardToken = true)
+	@GrpcClient("USER-SERVICE")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
 	@Operation(summary = "Get current user profile", description = "Returns the profile of the authenticated user")

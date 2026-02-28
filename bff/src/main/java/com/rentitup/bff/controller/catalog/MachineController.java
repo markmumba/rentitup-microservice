@@ -23,7 +23,7 @@ import java.util.List;
 @Tag(name = "Machines", description = "Machine management endpoints")
 public class MachineController {
 
-	@GrpcClient(value = "CATALOG-SERVICE", forwardToken = true)
+	@GrpcClient("CATALOG-SERVICE")
 	private CatalogServiceGrpc.CatalogServiceBlockingStub catalogServiceStub;
 
 	// ==================== Machine CRUD ====================
