@@ -1,7 +1,5 @@
 package com.rentitup.common.grpc.client;
 
-import com.rentitup.common.security.ServiceTokenProvider;
-import com.rentitup.common.security.TokenResolver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

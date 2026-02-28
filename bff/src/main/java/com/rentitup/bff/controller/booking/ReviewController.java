@@ -3,6 +3,7 @@ package com.rentitup.bff.controller.booking;
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.common.grpc.client.GrpcClient;
+import com.rentitup.common.security.SecurityUtils;
 import com.rentitup.shared.proto.booking.*;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,9 +11,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,18 +24,15 @@ public class ReviewController {
 
 	@PostMapping
 	@Operation(summary = "Create a review", description = "Submit a review for a completed booking")
-	public ResponseEntity<?> createReview(@RequestBody CreateReviewDto request) {
-		log.info("Creating review for booking: {}", request.bookingId());
+	public ResponseEntity<?> createReview(@RequestBody CreateReviewRequest request) {
+		log.info("Creating review for booking: {}", request.getBookingId());
 
-		CreateReviewRequest grpcRequest = CreateReviewRequest.newBuilder()
-				.setBookingId(request.bookingId())
-				.setReviewerId(getCurrentUserId())
-				.setMachineRating(request.machineRating())
-				.setOwnerRating(request.ownerRating())
-				.setComment(request.comment() != null ? request.comment() : "")
+		// Override reviewerId with authenticated user's ID for security
+		CreateReviewRequest secureRequest = request.toBuilder()
+				.setReviewerId(SecurityUtils.requiredCurrentUserId())
 				.build();
 
-		ReviewResponse response = bookingStub.createReview(grpcRequest);
+		ReviewResponse response = bookingStub.createReview(secureRequest);
 		return ResponseBuilder.created("Review submitted successfully", response.getReview());
 	}
 
@@ -109,7 +104,7 @@ public class ReviewController {
 		log.info("Getting reviews for current owner");
 
 		GetReviewsByOwnerRequest request = GetReviewsByOwnerRequest.newBuilder()
-				.setOwnerId(getCurrentUserId())
+				.setOwnerId(SecurityUtils.requiredCurrentUserId())
 				.setPagination(PaginationRequest.newBuilder()
 						.setPage(page)
 						.setSize(size)
@@ -129,18 +124,4 @@ public class ReviewController {
 				response.getPagination().getTotalElements()
 		);
 	}
-
-	private String getCurrentUserId() {
-		JwtAuthenticationToken auth = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-		Jwt jwt = auth.getToken();
-		return jwt.getClaimAsString("user_id");
-	}
-
-	// DTOs as records
-	public record CreateReviewDto(
-			String bookingId,
-			int machineRating,
-			int ownerRating,
-			String comment
-	) {}
 }

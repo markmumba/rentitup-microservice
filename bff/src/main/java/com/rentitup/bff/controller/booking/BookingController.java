@@ -3,24 +3,16 @@ package com.rentitup.bff.controller.booking;
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.common.grpc.client.GrpcClient;
+import com.rentitup.common.security.SecurityUtils;
 import com.rentitup.shared.proto.booking.*;
 import com.rentitup.shared.proto.common.PaginationRequest;
-import com.rentitup.shared.proto.common.Location;
-import com.rentitup.shared.proto.common.Timestamp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 
 @RestController
 @RequestMapping("/api/v1/bookings")
@@ -33,40 +25,15 @@ public class BookingController {
 
 	@PostMapping
 	@Operation(summary = "Create a new booking", description = "Create a booking for a machine rental")
-	public ResponseEntity<?> createBooking(@RequestBody CreateBookingDto request) {
-		log.info("Creating booking for machine: {}", request.machineId());
+	public ResponseEntity<?> createBooking(@RequestBody CreateBookingRequest request) {
+		log.info("Creating booking for machine: {}", request.getMachineId());
 
-		CreateBookingRequest.Builder builder = CreateBookingRequest.newBuilder()
-				.setMachineId(request.machineId())
-				.setCustomerId(getCurrentUserId())
-				.setStartDate(toTimestamp(request.startDate()))
-				.setEndDate(toTimestamp(request.endDate()));
+		// Override customerId with authenticated user's ID for security
+		CreateBookingRequest secureRequest = request.toBuilder()
+				.setCustomerId(SecurityUtils.requiredCurrentUserId())
+				.build();
 
-		if (request.pickupLatitude() != null && request.pickupLongitude() != null) {
-			Location.Builder locationBuilder = Location.newBuilder()
-					.setLatitude(request.pickupLatitude())
-					.setLongitude(request.pickupLongitude());
-			if (request.pickupAddress() != null) {
-				locationBuilder.setAddress(request.pickupAddress());
-			}
-			builder.setPickupLocation(locationBuilder.build());
-		}
-
-		if (request.specialRequirements() != null) {
-			builder.setSpecialRequirements(request.specialRequirements());
-		}
-
-		if (request.hours() != null) {
-			builder.setHours(request.hours());
-		}
-		if (request.weeks() != null) {
-			builder.setWeeks(request.weeks());
-		}
-		if (request.distance() != null) {
-			builder.setDistance(request.distance());
-		}
-
-		BookingResponse response = bookingStub.createBooking(builder.build());
+		BookingResponse response = bookingStub.createBooking(secureRequest);
 		return ResponseBuilder.created("Booking created successfully", response.getBooking());
 	}
 
@@ -89,15 +56,15 @@ public class BookingController {
 	@Operation(summary = "Update booking status", description = "Update the status of a booking (Admin/Owner only)")
 	public ResponseEntity<?> updateBookingStatus(
 			@Parameter(description = "Booking ID") @PathVariable String id,
-			@RequestBody UpdateBookingStatusDto request) {
-		log.info("Updating booking status: {} -> {}", id, request.status());
+			@RequestBody UpdateBookingStatusRequest request) {
+		log.info("Updating booking status: {} -> {}", id, request.getStatus());
 
-		UpdateBookingStatusRequest grpcRequest = UpdateBookingStatusRequest.newBuilder()
+		// Override ID from path parameter for security
+		UpdateBookingStatusRequest secureRequest = request.toBuilder()
 				.setId(id)
-				.setStatus(mapBookingStatus(request.status()))
 				.build();
 
-		BookingResponse response = bookingStub.updateBookingStatus(grpcRequest);
+		BookingResponse response = bookingStub.updateBookingStatus(secureRequest);
 		return ResponseBuilder.success("Booking status updated successfully", response.getBooking());
 	}
 
@@ -105,15 +72,15 @@ public class BookingController {
 	@Operation(summary = "Cancel a booking", description = "Cancel an existing booking with a reason")
 	public ResponseEntity<?> cancelBooking(
 			@Parameter(description = "Booking ID") @PathVariable String id,
-			@RequestBody CancelBookingDto request) {
+			@RequestBody CancelBookingRequest request) {
 		log.info("Cancelling booking: {}", id);
 
-		CancelBookingRequest grpcRequest = CancelBookingRequest.newBuilder()
+		// Override ID from path parameter
+		CancelBookingRequest secureRequest = request.toBuilder()
 				.setId(id)
-				.setReason(request.reason() != null ? request.reason() : "")
 				.build();
 
-		BookingResponse response = bookingStub.cancelBooking(grpcRequest);
+		BookingResponse response = bookingStub.cancelBooking(secureRequest);
 		return ResponseBuilder.success("Booking cancelled successfully", response.getBooking());
 	}
 
@@ -126,7 +93,7 @@ public class BookingController {
 		log.info("Getting bookings for current user");
 
 		ListBookingsByCustomerRequest.Builder builder = ListBookingsByCustomerRequest.newBuilder()
-				.setCustomerId(getCurrentUserId())
+				.setCustomerId(SecurityUtils.requiredCurrentUserId())
 				.setPagination(PaginationRequest.newBuilder()
 						.setPage(page)
 						.setSize(size)
@@ -190,7 +157,7 @@ public class BookingController {
 		log.info("Getting bookings for owner");
 
 		ListBookingsForOwnerRequest.Builder builder = ListBookingsForOwnerRequest.newBuilder()
-				.setOwnerId(getCurrentUserId())
+				.setOwnerId(SecurityUtils.requiredCurrentUserId())
 				.setPagination(PaginationRequest.newBuilder()
 						.setPage(page)
 						.setSize(size)
@@ -214,21 +181,6 @@ public class BookingController {
 		);
 	}
 
-	private String getCurrentUserId() {
-		JwtAuthenticationToken auth = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-		Jwt jwt = auth.getToken();
-		return jwt.getClaimAsString("user_id");
-	}
-
-	private Timestamp toTimestamp(LocalDate date) {
-		if (date == null) return Timestamp.getDefaultInstance();
-		Instant instant = date.atStartOfDay().toInstant(ZoneOffset.UTC);
-		return Timestamp.newBuilder()
-				.setSeconds(instant.getEpochSecond())
-				.setNanos(instant.getNano())
-				.build();
-	}
-
 	private BookingStatus mapBookingStatus(String status) {
 		if (status == null) return BookingStatus.BOOKING_STATUS_UNSPECIFIED;
 		return switch (status.toUpperCase()) {
@@ -240,22 +192,4 @@ public class BookingController {
 			default -> BookingStatus.BOOKING_STATUS_UNSPECIFIED;
 		};
 	}
-
-	// DTOs as records
-	public record CreateBookingDto(
-			String machineId,
-			LocalDate startDate,
-			LocalDate endDate,
-			Double pickupLatitude,
-			Double pickupLongitude,
-			String pickupAddress,
-			String specialRequirements,
-			Integer hours,
-			Integer weeks,
-			Integer distance
-	) {}
-
-	public record UpdateBookingStatusDto(String status) {}
-
-	public record CancelBookingDto(String reason) {}
 }

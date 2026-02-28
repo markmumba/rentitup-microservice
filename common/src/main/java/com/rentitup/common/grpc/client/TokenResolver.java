@@ -1,4 +1,4 @@
-package com.rentitup.common.security;
+package com.rentitup.common.grpc.client;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -6,15 +6,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-/**
- * Resolves authentication tokens for outgoing gRPC calls.
- *
- * <p>Priority:
- * <ol>
- *   <li>User token (forwarded from incoming request)</li>
- *   <li>Service token (from OAuth2 client credentials)</li>
- * </ol>
- */
 @Slf4j
 public class TokenResolver {
 
@@ -27,9 +18,7 @@ public class TokenResolver {
 		this.userTokenSupplier = userTokenSupplier;
 	}
 
-	/**
-	 * Creates a TokenResolver that only forwards user tokens (no service token fallback).
-	 */
+
 	public TokenResolver(Supplier<Optional<String>> userTokenSupplier) {
 		this(null, userTokenSupplier);
 	}

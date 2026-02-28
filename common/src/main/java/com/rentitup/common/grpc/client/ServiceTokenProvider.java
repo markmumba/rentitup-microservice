@@ -1,6 +1,5 @@
-package com.rentitup.common.security;
+package com.rentitup.common.grpc.client;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;

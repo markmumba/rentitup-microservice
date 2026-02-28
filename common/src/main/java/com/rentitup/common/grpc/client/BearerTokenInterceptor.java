@@ -1,6 +1,5 @@
 package com.rentitup.common.grpc.client;
 
-import com.rentitup.common.security.TokenResolver;
 import io.grpc.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

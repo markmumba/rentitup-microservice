@@ -26,7 +26,7 @@ public class GrpcAutoConfiguration {
 	}
 
 	public static class EurekaNameResolverRegistrar {
-
+ 
 		private final EurekaClient eurekaClient;
 
 		public EurekaNameResolverRegistrar(EurekaClient eurekaClient) {
