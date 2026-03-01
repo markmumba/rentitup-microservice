@@ -13,13 +13,17 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
-
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -64,16 +68,23 @@ public class AuthorizationServerConfig {
 	@Bean
 	@Order(1)
 	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+		OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+				new OAuth2AuthorizationServerConfigurer();
 
-
-		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-				.oidc(Customizer.withDefaults());
-
-		http.exceptionHandling(exceptions ->
-				exceptions.defaultAuthenticationEntryPointFor(
-						new LoginUrlAuthenticationEntryPoint("/login"),
-						new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-				));
+		http
+				.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+				.with(authorizationServerConfigurer, authServer ->
+						authServer.oidc(Customizer.withDefaults())
+				)
+				.authorizeHttpRequests(authorize ->
+						authorize.anyRequest().authenticated()
+				)
+				.exceptionHandling(exceptions ->
+						exceptions.defaultAuthenticationEntryPointFor(
+								new LoginUrlAuthenticationEntryPoint("/login"),
+								new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+						)
+				);
 
 		return http.build();
 	}
@@ -124,7 +135,6 @@ public class AuthorizationServerConfig {
 						.build())
 
 				.build();
-		// BFF service client - for service-to-service calls (public endpoints like registration)
 		RegisteredClient bffService = RegisteredClient.withId(UUID.randomUUID().toString())
 				.clientId("bff-service")
 				.clientSecret(passwordEncoder.encode("bff-secret"))
@@ -228,7 +238,11 @@ public class AuthorizationServerConfig {
 
 	@Bean
 	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+		JWSKeySelector<SecurityContext> jwsKeySelector =
+				new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, jwkSource);
+		ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+		jwtProcessor.setJWSKeySelector(jwsKeySelector);
+		return new NimbusJwtDecoder(jwtProcessor);
 	}
 
 	@Bean

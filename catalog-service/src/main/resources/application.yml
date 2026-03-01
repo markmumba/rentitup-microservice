@@ -23,12 +23,10 @@ spring:
 
   security:
     oauth2:
-      # Resource server - validates incoming JWTs
       resourceserver:
         jwt:
           issuer-uri: ${AUTH_SERVER_URL:http://localhost:9000}
           jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/jwks
-      # Client - gets service tokens for inter-service calls
       client:
         registration:
           auth-server:

@@ -6,6 +6,7 @@ import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
 import io.grpc.Status;
 import io.grpc.StatusOr;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class EurekaNameResolver extends NameResolver {
 
 	private final String serviceName;
@@ -46,6 +48,7 @@ public class EurekaNameResolver extends NameResolver {
 					int port = Integer.parseInt(
 							instance.getMetadata().getOrDefault("grpc-port", "9000")
 					);
+					log.info("Eureka NameResolver: host={}, port={}", host, port);
 					return new EquivalentAddressGroup(
 							new InetSocketAddress(host, port)
 					);
