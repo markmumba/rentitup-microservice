@@ -158,6 +158,8 @@ public class BookingServiceImpl implements BookingService {
 		}
 		if (status == BookingStatus.COMPLETED) {
 			bookingToUpdate.setCompletedAt(Instant.now());
+		 Machine machine=catalogGrpcClient.updateTotalBookings(bookingToUpdate.getMachineId().toString());
+		 log.info("Updating the total bookings of machine: {}:{} new total is {}",machine.getId(),machine.getName(),machine.getTotalRentals());
 		}
 		BookingEntity saved = bookingRepository.save(bookingToUpdate);
 		log.info("Booking status updated successfully with id: {}", saved.getId());

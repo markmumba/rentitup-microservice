@@ -19,6 +19,7 @@ include(
     "booking-service",
     "catalog-service",
     "cron-service",
+    "notification-service",
     "service-registry",
     "user-service"
 )

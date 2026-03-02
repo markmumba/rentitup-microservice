@@ -33,4 +33,12 @@ public class CatalogGrpcClient {
 				.map(UUID::fromString)
 				.toList();
 	}
+
+	public Machine updateTotalBookings(String machineId) {
+
+	 UpdateMachineBookingsRequest request=UpdateMachineBookingsRequest.newBuilder()
+			 .setMachineId(machineId)
+			 .build();
+		return client.updateMachineBookings(request).getMachine();
+	}
 }

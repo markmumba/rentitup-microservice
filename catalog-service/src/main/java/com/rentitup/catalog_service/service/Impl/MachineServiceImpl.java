@@ -4,6 +4,7 @@ import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
 import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
+import com.rentitup.catalog_service.enums.MachineStatus;
 import com.rentitup.catalog_service.grpc.client.UserGrpcClient;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
@@ -18,9 +19,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -222,6 +227,69 @@ public class MachineServiceImpl implements MachineService {
 		return machineRepository.findAllByOwnerId(ownerId).stream()
 				.map(MachineEntity::getId)
 				.toList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public boolean checkAvailability(UUID machineId, LocalDate startDate, LocalDate endDate) {
+		MachineEntity machine = getMachine(machineId);
+
+		if (machine.isDeleted()) {
+			return false;
+		}
+
+		if (machine.getStatus() == MachineStatus.MAINTENANCE || machine.getStatus() == MachineStatus.INACTIVE) {
+			return false;
+		}
+
+		if (!machine.isAvailable()) {
+			return false;
+		}
+
+		// Check for maintenance scheduled during the requested period
+		boolean hasMaintenanceConflict = maintenanceRecordRepository
+				.existsByMachineAndNextServiceDateBetween(machine, startDate, endDate);
+
+		return !hasMaintenanceConflict;
+	}
+
+	@Override
+	@Transactional
+	public MachineEntity updateMachineStatus(UUID machineId, MachineStatus status) {
+		MachineEntity machine = getMachine(machineId);
+		machine.setStatus(status);
+
+		if (status == MachineStatus.AVAILABLE) {
+			machine.setAvailable(true);
+		} else if (status == MachineStatus.RENTED || status == MachineStatus.MAINTENANCE || status == MachineStatus.INACTIVE) {
+			machine.setAvailable(false);
+		}
+
+		return machineRepository.save(machine);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Map<UUID, MachineEntity> getMachinesBatch(List<UUID> machineIds) {
+		return machineRepository.findAllById(machineIds).stream()
+				.collect(Collectors.toMap(MachineEntity::getId, Function.identity()));
+	}
+
+	@Override
+	@Transactional
+	public MachineEntity updateMachineRating(UUID machineId, BigDecimal newAverageRating, int totalReviews) {
+		MachineEntity machine = getMachine(machineId);
+		machine.setAverageRating(newAverageRating);
+		machine.setTotalReviews(totalReviews);
+		return machineRepository.save(machine);
+	}
+
+	@Override
+	@Transactional
+	public MachineEntity incrementTotalRentals(UUID machineId) {
+		MachineEntity machine = getMachine(machineId);
+		machine.setTotalRentals(machine.getTotalRentals() + 1);
+		return machineRepository.save(machine);
 	}
 
 }

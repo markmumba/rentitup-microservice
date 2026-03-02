@@ -22,7 +22,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -509,6 +511,160 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 			log.error("Failed to get maintenance history", ex);
 			responseObserver.onError(Status.INTERNAL
 					.withDescription("Failed to get maintenance history")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void checkAvailability(CheckAvailabilityRequest request, StreamObserver<CheckAvailabilityResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			LocalDate startDate = LocalDate.of(
+					request.getStartDate().getYear(),
+					request.getStartDate().getMonth(),
+					request.getStartDate().getDay()
+			);
+			LocalDate endDate = LocalDate.of(
+					request.getEndDate().getYear(),
+					request.getEndDate().getMonth(),
+					request.getEndDate().getDay()
+			);
+
+			boolean isAvailable = machineService.checkAvailability(machineId, startDate, endDate);
+
+			CheckAvailabilityResponse.Builder responseBuilder = CheckAvailabilityResponse.newBuilder()
+					.setAvailable(isAvailable);
+
+			if (!isAvailable) {
+				responseBuilder.setReason("Machine is not available for the requested period");
+			}
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to check availability", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to check availability")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void updateMachineStatus(UpdateMachineStatusRequest request, StreamObserver<MachineResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			MachineEntity machine = machineService.updateMachineStatus(
+					machineId,
+					catalogMapper.map(request.getStatus())
+			);
+
+			MachineResponse response = MachineResponse.newBuilder()
+					.setMachine(catalogMapper.toProto(machine))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to update machine status", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to update machine status")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getMachinesBatch(GetMachineBatchRequest request, StreamObserver<GetMachinesBatchResponse> responseObserver) {
+		try {
+			List<UUID> machineIds = request.getMachineIdsList().stream()
+					.map(UUID::fromString)
+					.toList();
+
+			Map<UUID, MachineEntity> machines = machineService.getMachinesBatch(machineIds);
+
+			GetMachinesBatchResponse.Builder responseBuilder = GetMachinesBatchResponse.newBuilder();
+			machines.forEach((id, entity) ->
+					responseBuilder.putMachines(id.toString(), catalogMapper.toProto(entity)));
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID in batch request", ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID format in batch")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to get machines batch", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to get machines batch")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void updateMachineRating(UpdateMachineRatingRequest request, StreamObserver<MachineResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			MachineEntity machine = machineService.updateMachineRating(
+					machineId,
+					BigDecimal.valueOf(request.getNewAverageRating()),
+					request.getTotalReviews()
+			);
+
+			MachineResponse response = MachineResponse.newBuilder()
+					.setMachine(catalogMapper.toProto(machine))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to update machine rating", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to update machine rating")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void updateMachineBookings(UpdateMachineBookingsRequest request, StreamObserver<MachineResponse> responseObserver) {
+		try {
+			UUID machineId = UUID.fromString(request.getMachineId());
+			MachineEntity machine = machineService.incrementTotalRentals(machineId);
+
+			MachineResponse response = MachineResponse.newBuilder()
+					.setMachine(catalogMapper.toProto(machine))
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid machine ID: {}", request.getMachineId(), ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid machine ID")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to update machine bookings", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to update machine bookings")
 					.withCause(ex)
 					.asRuntimeException());
 		}

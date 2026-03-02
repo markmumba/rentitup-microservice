@@ -22,4 +22,6 @@ public interface MaintenanceRecordRepository extends  JpaRepository<MaintenanceR
 										  Pageable pageable);
 
 	Page<MaintenanceRecordEntity> findAllByMachine(MachineEntity machine, Pageable pageable);
+
+	boolean existsByMachineAndNextServiceDateBetween(MachineEntity machine, LocalDate startDate, LocalDate endDate);
 }

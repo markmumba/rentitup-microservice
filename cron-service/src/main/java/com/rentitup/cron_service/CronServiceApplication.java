@@ -1,4 +1,4 @@
-package com.example.cron_service;
+package com.rentitup.cron_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

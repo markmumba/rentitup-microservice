@@ -1,4 +1,4 @@
-package com.example.cron_service.services;
+package com.rentitup.cron_service.services;
 
 import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.booking.BookingServiceGrpc;
@@ -47,6 +47,10 @@ public class CatalogServices {
 				log.info("Machine of id {} and name {} has been updated the rating : {} ,totalReviews: {}",response.getMachine().getId(),response.getMachine().getName(),averageRating,totalReviews);
 			}
 		}
+
+	}
+
+	public void sendUpcomingMaintenanceEmails(){
 
 	}
 

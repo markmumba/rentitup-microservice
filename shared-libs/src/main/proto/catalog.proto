@@ -326,6 +326,10 @@ message UpdateMachineRatingRequest {
   int32 total_reviews = 3;
 }
 
+message UpdateMachineBookingsRequest{
+  string machine_id =1;
+}
+
 service CatalogService {
 
   rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse);
@@ -355,13 +359,14 @@ service CatalogService {
 
   // for the booking service to check availability
   rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
-  rpc UpdateMachineStatus(UpdateMachineRatingRequest) returns (MachineResponse);
+  rpc UpdateMachineStatus(UpdateMachineStatusRequest) returns (MachineResponse);
   rpc GetMachineIdsByOwner(GetMachineIdsRequest) returns (GetMachineIdsResponse);
 
   rpc GetMachinesBatch(GetMachineBatchRequest) returns (GetMachinesBatchResponse);
 
   // called by the review service to update the rating of the given machine
   rpc UpdateMachineRating (UpdateMachineRatingRequest) returns (MachineResponse);
+  rpc UpdateMachineBookings (UpdateMachineBookingsRequest) returns(MachineResponse);
 
 }
 
