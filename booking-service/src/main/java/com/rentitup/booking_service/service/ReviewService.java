@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface ReviewService {
 	ReviewEntity createReview(UUID bookingId, UUID reviewerId, int machineRating, int ownerRating, String comment);
@@ -15,4 +16,8 @@ public interface ReviewService {
 	Page<ReviewEntity> getReviewsByOwner(UUID ownerId, Pageable pageable);
 
 	List<ReviewEntity> getAllReviews();
+
+	Stream<ReviewEntity> streamUnsyncedReviews();
+
+	int markReviewsAsSynced(List<UUID> reviewIds);
 }

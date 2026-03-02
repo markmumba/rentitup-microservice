@@ -20,12 +20,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -290,6 +292,27 @@ public class MachineServiceImpl implements MachineService {
 		MachineEntity machine = getMachine(machineId);
 		machine.setTotalRentals(machine.getTotalRentals() + 1);
 		return machineRepository.save(machine);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<MaintenanceRecordEntity> getAllMaintenanceRecords() {
+		return maintenanceRecordRepository.findAll();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Stream<MaintenanceRecordEntity> streamRecordsNeedingReminder(LocalDate endDate, Instant reminderCutoff) {
+		return maintenanceRecordRepository.streamRecordsNeedingReminder(endDate, reminderCutoff);
+	}
+
+	@Override
+	@Transactional
+	public int markMaintenanceRecordsAsReminded(List<UUID> recordIds) {
+		if (recordIds == null || recordIds.isEmpty()) {
+			return 0;
+		}
+		return maintenanceRecordRepository.markAsReminded(recordIds, Instant.now());
 	}
 
 }

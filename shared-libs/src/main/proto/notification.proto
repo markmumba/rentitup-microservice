@@ -30,33 +30,31 @@ enum NotificationPriority {
   URGENT = 4;
 }
 
-// ==================== Core Messages ====================
 
 message Notification {
   string id = 1;
   string user_id = 2;
-  string recipient = 3;              // email address or phone number
+  string recipient = 3;
   NotificationChannel channel = 4;
   string template_key = 5;
-  map<string, string> data = 6;      // template placeholder values
+  map<string, string> data = 6;
   NotificationStatus status = 7;
   NotificationPriority priority = 8;
-  string subject = 9;                // rendered subject (for email)
-  string body = 10;                  // rendered body
-  string error_message = 11;         // if failed
+  string subject = 9;
+  string body = 10;
+  string error_message = 11;
   int32 retry_count = 12;
   rentitup.common.Timestamp created_at = 13;
   rentitup.common.Timestamp sent_at = 14;
 }
 
-// ==================== Request/Response Messages ====================
 
 message SendNotificationRequest {
-  string recipient = 1;              // email or phone based on channel
+  string recipient = 1;
   NotificationChannel channel = 2;
-  string template_key = 3;           // e.g., "booking_confirmed", "maintenance_reminder"
-  map<string, string> data = 4;      // placeholder values: {"userName": "John", "machineName": "Excavator"}
-  optional string user_id = 5;       // for tracking and user preferences
+  string template_key = 3;
+  map<string, string> data = 4;
+  optional string user_id = 5;
   optional NotificationPriority priority = 6;
 }
 

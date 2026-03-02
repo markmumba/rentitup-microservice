@@ -17,8 +17,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -85,5 +89,22 @@ public class ReviewServiceImpl implements ReviewService {
 	@Override
 	public List<ReviewEntity> getAllReviews() {
 		return reviewRepository.findAll();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Stream<ReviewEntity> streamUnsyncedReviews() {
+		log.info("Streaming unsynced reviews");
+		return reviewRepository.streamUnsyncedReviews();
+	}
+
+	@Override
+	@Transactional
+	public int markReviewsAsSynced(List<UUID> reviewIds) {
+		if (reviewIds == null || reviewIds.isEmpty()) {
+			return 0;
+		}
+		log.info("Marking {} reviews as synced", reviewIds.size());
+		return reviewRepository.markReviewsAsSynced(reviewIds, Instant.now());
 	}
 }

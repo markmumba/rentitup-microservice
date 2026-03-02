@@ -36,4 +36,7 @@ public class MaintenanceRecordEntity extends BaseEntity {
 	@Column(name = "next_service_date")
 	private LocalDate nextServiceDate;
 
+	@Column(name = "reminder_sent_at")
+	private Instant reminderSentAt;
+
 }

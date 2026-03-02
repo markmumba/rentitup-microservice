@@ -193,12 +193,43 @@ public class AuthorizationServerConfig {
 						.build())
 				.build();
 
+		RegisteredClient cronService = RegisteredClient.withId(UUID.randomUUID().toString())
+				.clientId("cron-service")
+				.clientSecret(passwordEncoder.encode("cron-secret"))
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+				.scope("internal")
+				.scope("user:read")
+				.scope("catalog:read")
+				.scope("catalog:write")
+				.scope("booking:read")
+				.scope("booking:write")
+				.tokenSettings(TokenSettings.builder()
+						.accessTokenTimeToLive(Duration.ofMinutes(30))
+						.build())
+				.build();
+		RegisteredClient notificationService = RegisteredClient.withId(UUID.randomUUID().toString())
+				.clientId("notification-service")
+				.clientSecret(passwordEncoder.encode("notification-secret"))
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+				.scope("internal")
+				.scope("user:read")        // to fetch user details for notifications
+				.scope("booking:read")     // to fetch booking details for notifications
+				.scope("catalog:read")     // to fetch machine details for notifications
+				.tokenSettings(TokenSettings.builder()
+						.accessTokenTimeToLive(Duration.ofMinutes(30))
+						.build())
+				.build();
+
 		return new InMemoryRegisteredClientRepository(
 				bff,
 				bffService,
 				catalogService,
 				userService,
-				bookingService
+				bookingService,
+				cronService,
+				notificationService
 		);
 	}
 

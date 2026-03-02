@@ -177,8 +177,10 @@ public interface BookingMapper {
 				.setId(entity.getId().toString())
 				.setBookingId(entity.getBooking().getId().toString())
 				.setReviewerId(entity.getReviewerId().toString())
+				.setMachineId(entity.getMachineId().toString())
 				.setMachineRating(entity.getMachineRating())
-				.setOwnerRating(entity.getOwnerRating());
+				.setOwnerRating(entity.getOwnerRating())
+				.setRatingSynced(entity.isRatingSynced());
 
 		if (entity.getComment() != null) {
 			builder.setComment(entity.getComment());
@@ -186,6 +188,10 @@ public interface BookingMapper {
 
 		if (entity.getCreatedAt() != null) {
 			builder.setCreatedAt(fromLocalDateTimeToTimestamp(entity.getCreatedAt()));
+		}
+
+		if (entity.getSyncedAt() != null) {
+			builder.setSyncedAt(fromInstantToTimestamp(entity.getSyncedAt()));
 		}
 
 		return builder.build();

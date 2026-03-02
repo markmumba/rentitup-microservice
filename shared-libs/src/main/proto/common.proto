@@ -49,3 +49,6 @@ message ErrorDetail {
   string message =2;
   string code =3;
 }
+message Empty{
+
+}

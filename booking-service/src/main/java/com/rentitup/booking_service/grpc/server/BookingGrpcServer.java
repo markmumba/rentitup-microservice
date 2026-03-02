@@ -12,17 +12,20 @@ import com.rentitup.booking_service.service.ReviewService;
 import com.rentitup.common.grpc.GrpcExceptionHandler;
 import com.rentitup.common.util.PaginationHelper;
 import com.rentitup.shared.proto.booking.*;
+import com.rentitup.shared.proto.common.Empty;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -318,6 +321,63 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 			responseObserver.onCompleted();
 		} catch (Exception e) {
 			GrpcExceptionHandler.handleException(e, responseObserver, "getReviewsByOwner");
+		}
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public void getUnsyncedReviews(Empty request, StreamObserver<ListReviewResponse> responseObserver) {
+		try {
+			log.info("gRPC: Streaming unsynced reviews");
+			final int BATCH_SIZE = 100;
+			List<Review> batch = new ArrayList<>();
+			AtomicInteger count = new AtomicInteger(0);
+
+			reviewService.streamUnsyncedReviews().forEach(review -> {
+				batch.add(bookingMapper.toProto(review));
+				count.incrementAndGet();
+
+				if (batch.size() >= BATCH_SIZE) {
+					responseObserver.onNext(ListReviewResponse.newBuilder()
+							.addAllReviews(batch)
+							.build());
+					batch.clear();
+				}
+			});
+
+			// Send remaining reviews
+			if (!batch.isEmpty()) {
+				responseObserver.onNext(ListReviewResponse.newBuilder()
+						.addAllReviews(batch)
+						.build());
+			}
+
+			log.info("gRPC: Streamed {} unsynced reviews", count.get());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "getUnsyncedReviews");
+		}
+	}
+
+	@Override
+	public void markReviewsSynced(MarkReviewsSyncedRequest request, StreamObserver<MarkReviewsSyncedResponse> responseObserver) {
+		try {
+			log.info("gRPC: Marking {} reviews as synced", request.getReviewIdsCount());
+
+			List<UUID> reviewIds = request.getReviewIdsList().stream()
+					.map(UUID::fromString)
+					.toList();
+
+			int updatedCount = reviewService.markReviewsAsSynced(reviewIds);
+
+			MarkReviewsSyncedResponse response = MarkReviewsSyncedResponse.newBuilder()
+					.setUpdatedCount(updatedCount)
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "markReviewsSynced");
 		}
 	}
 

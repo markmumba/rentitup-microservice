@@ -13,17 +13,25 @@ public class CatalogJob {
 
 	private final CatalogServices catalogServices;
 
-	@Scheduled(cron = "0 0 0 * * *")
-	public void updateMachineRating() {
-		log.info("Start updating of machine rating");
-		catalogServices.UpdateMachineRatings();
-		log.info("Finished updating of machine rating");
+	@Scheduled(cron = "${cron.update-ratings:0 0 2 * * *}")
+	public void updateMachineRatings() {
+		log.info("=== Starting machine rating update job ===");
+		try {
+			catalogServices.updateMachineRatings();
+			log.info("=== Completed machine rating update job ===");
+		} catch (Exception e) {
+			log.error("=== Machine rating update job FAILED ===", e);
+		}
 	}
 
-	@Scheduled(cron = "0 0 8 * * *")
-	public void sendMaintenanceRecordEmails() {
-		log.info("Start sending of maintenance record emails");
-		catalogServices.sendUpcomingMaintenanceEmails();
-		log.info("Finished of maintenance record emails");
+	@Scheduled(cron = "${cron.maintenance-reminder:0 0 8 * * *}")
+	public void sendMaintenanceReminders() {
+		log.info("=== Starting maintenance reminder job ===");
+		try {
+			catalogServices.sendUpcomingMaintenanceEmails();
+			log.info("=== Completed maintenance reminder job ===");
+		} catch (Exception e) {
+			log.error("=== Maintenance reminder job FAILED ===", e);
+		}
 	}
 }

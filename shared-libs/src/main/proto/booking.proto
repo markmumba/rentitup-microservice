@@ -69,11 +69,13 @@ message Review {
   string id = 1;
   string booking_id = 2;
   string reviewer_id = 3;
-  string machine_id =4;
+  string machine_id = 4;
   int32 machine_rating = 5;
   int32 owner_rating = 6;
   string comment = 7;
   rentitup.common.Timestamp created_at = 8;
+  bool rating_synced = 9;                      // Has this review been synced to machine rating?
+  rentitup.common.Timestamp synced_at = 10;    // When was it synced?
 }
 
 message CreateBookingRequest {
@@ -176,12 +178,17 @@ message ReviewsResponse {
   rentitup.common.PaginationResponse pagination = 2;
 }
 
-message Empty {
 
+message ListReviewResponse {
+  repeated Review reviews = 1;
 }
 
-message ListReviewResponse{
-  repeated Review reviews =1;
+message MarkReviewsSyncedRequest {
+  repeated string review_ids = 1;
+}
+
+message MarkReviewsSyncedResponse {
+  int32 updated_count = 1;
 }
 
 
@@ -198,7 +205,9 @@ service BookingService {
   rpc UpdatePaymentStatus(UpdatePaymentStatusRequest) returns (PaymentResponse);
   rpc GetPaymentsByBooking(GetPaymentsByBookingRequest) returns (PaymentsResponse);
 
-  rpc GetAllReviews(Empty) returns (stream ListReviewResponse);
+  rpc GetAllReviews(rentitup.common.Empty) returns (stream ListReviewResponse);
+  rpc GetUnsyncedReviews(rentitup.common.Empty) returns (stream ListReviewResponse);
+  rpc MarkReviewsSynced(MarkReviewsSyncedRequest) returns (MarkReviewsSyncedResponse);
   rpc CreateReview(CreateReviewRequest) returns (ReviewResponse);
   rpc GetReviewsByMachine(GetReviewsByMachineRequest) returns (ReviewsResponse);
   rpc GetReviewsByOwner(GetReviewsByOwnerRequest) returns (ReviewsResponse);

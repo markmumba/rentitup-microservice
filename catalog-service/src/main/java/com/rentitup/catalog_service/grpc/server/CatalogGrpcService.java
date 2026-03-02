@@ -21,11 +21,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -671,6 +677,33 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	}
 
 	@Override
+	public void getMaintenanceRecords(Empty request, StreamObserver<ListMaintenanceRecordResponse> responseObserver) {
+		try {
+			List<MaintenanceRecordEntity> allRecords = machineService.getAllMaintenanceRecords();
+
+			// Stream records in batches of 100
+			int batchSize = 100;
+			for (int i = 0; i < allRecords.size(); i += batchSize) {
+				int end = Math.min(i + batchSize, allRecords.size());
+				List<MaintenanceRecordEntity> batch = allRecords.subList(i, end);
+
+				ListMaintenanceRecordResponse.Builder responseBuilder = ListMaintenanceRecordResponse.newBuilder();
+				batch.forEach(record -> responseBuilder.addRecords(catalogMapper.toProto(record)));
+
+				responseObserver.onNext(responseBuilder.build());
+			}
+
+			responseObserver.onCompleted();
+		} catch (Exception ex) {
+			log.error("Failed to get maintenance records", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to get maintenance records")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
 	public void getUpcomingMaintenance(GetUpcomingMaintenanceRequest request, StreamObserver<MaintenanceHistoryResponse> responseObserver) {
 		try {
 			UUID ownerId = UUID.fromString(request.getOwnerId());
@@ -698,6 +731,82 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 			log.error("Failed to get upcoming maintenance", ex);
 			responseObserver.onError(Status.INTERNAL
 					.withDescription("Failed to get upcoming maintenance")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public void getMaintenanceRecordsNeedingReminder(GetMaintenanceRecordsNeedingReminderRequest request,
+			StreamObserver<ListMaintenanceRecordResponse> responseObserver) {
+		try {
+			int daysAhead = request.getDaysAhead() > 0 ? request.getDaysAhead() : 7;
+			LocalDate endDate = LocalDate.now().plusDays(daysAhead);
+			// Only send reminder once per day
+			Instant reminderCutoff = Instant.now().minus(1, ChronoUnit.DAYS);
+
+			final int BATCH_SIZE = 100;
+			List<MaintenanceRecord> batch = new ArrayList<>();
+			AtomicInteger count = new AtomicInteger(0);
+
+			machineService.streamRecordsNeedingReminder(endDate, reminderCutoff).forEach(record -> {
+				batch.add(catalogMapper.toProto(record));
+				count.incrementAndGet();
+
+				if (batch.size() >= BATCH_SIZE) {
+					responseObserver.onNext(ListMaintenanceRecordResponse.newBuilder()
+							.addAllRecords(batch)
+							.build());
+					batch.clear();
+				}
+			});
+
+			// Send remaining records
+			if (!batch.isEmpty()) {
+				responseObserver.onNext(ListMaintenanceRecordResponse.newBuilder()
+						.addAllRecords(batch)
+						.build());
+			}
+
+			log.info("Streamed {} maintenance records needing reminder", count.get());
+			responseObserver.onCompleted();
+		} catch (Exception ex) {
+			log.error("Failed to get maintenance records needing reminder", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to get maintenance records needing reminder")
+					.withCause(ex)
+					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void markMaintenanceReminded(MarkMaintenanceRemindedRequest request,
+			StreamObserver<MarkMaintenanceRemindedResponse> responseObserver) {
+		try {
+			log.info("Marking {} maintenance records as reminded", request.getRecordIdsCount());
+
+			List<UUID> recordIds = request.getRecordIdsList().stream()
+					.map(UUID::fromString)
+					.toList();
+
+			int updatedCount = machineService.markMaintenanceRecordsAsReminded(recordIds);
+
+			MarkMaintenanceRemindedResponse response = MarkMaintenanceRemindedResponse.newBuilder()
+					.setUpdatedCount(updatedCount)
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid record ID in request", ex);
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid record ID format")
+					.asRuntimeException());
+		} catch (Exception ex) {
+			log.error("Failed to mark maintenance records as reminded", ex);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Failed to mark maintenance records as reminded")
 					.withCause(ex)
 					.asRuntimeException());
 		}

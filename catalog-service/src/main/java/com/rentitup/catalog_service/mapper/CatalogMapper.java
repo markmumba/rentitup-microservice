@@ -286,8 +286,21 @@ public interface CatalogMapper {
 		if (entity.getCreatedAt() != null) {
 			builder.setCreatedAt(mapLocalDateTime(entity.getCreatedAt()));
 		}
+		if (entity.getReminderSentAt() != null) {
+			builder.setReminderSentAt(mapInstant(entity.getReminderSentAt()));
+		}
 
 		return builder.build();
+	}
+
+	default Timestamp mapInstant(Instant instant) {
+		if (instant == null) {
+			return Timestamp.getDefaultInstance();
+		}
+		return Timestamp.newBuilder()
+				.setSeconds(instant.getEpochSecond())
+				.setNanos(instant.getNano())
+				.build();
 	}
 	// ==================== MachineStatus Mappings ====================
 

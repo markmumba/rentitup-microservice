@@ -45,4 +45,9 @@ public class ReviewEntity extends BaseEntity {
 
 	private Instant ownerResponseAt;
 
+	@Column(nullable = false)
+	private boolean ratingSynced = false;
+
+	private Instant syncedAt;
+
 }

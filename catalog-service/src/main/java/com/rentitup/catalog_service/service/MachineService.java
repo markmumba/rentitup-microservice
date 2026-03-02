@@ -8,10 +8,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface MachineService {
 	MachineEntity createMachine(MachineEntity machine, UUID categoryId);
@@ -39,4 +41,11 @@ public interface MachineService {
 	// Rating and booking updates (called by other services)
 	MachineEntity updateMachineRating(UUID machineId, BigDecimal newAverageRating, int totalReviews);
 	MachineEntity incrementTotalRentals(UUID machineId);
+
+	// Get all maintenance records (for cron jobs)
+	List<MaintenanceRecordEntity> getAllMaintenanceRecords();
+
+	// Maintenance reminder tracking
+	Stream<MaintenanceRecordEntity> streamRecordsNeedingReminder(LocalDate endDate, Instant reminderCutoff);
+	int markMaintenanceRecordsAsReminded(List<UUID> recordIds);
 }
