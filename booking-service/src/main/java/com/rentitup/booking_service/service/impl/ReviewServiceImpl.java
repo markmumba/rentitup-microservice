@@ -66,6 +66,7 @@ public class ReviewServiceImpl implements ReviewService {
 				.machineRating(machineRating)
 				.ownerRating(ownerRating)
 				.comment(comment)
+				.ratingSynced(false)
 				.build();
 
 		ReviewEntity savedReview = reviewRepository.save(review);
