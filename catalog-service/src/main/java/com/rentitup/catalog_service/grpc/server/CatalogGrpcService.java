@@ -278,9 +278,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 
 			Specification<MachineEntity> spec = Specification
 					.where(MachineSpecification.notDeleted())
-					.and(MachineSpecification.isAvailable())
-					.and(MachineSpecification.hasCategory(
-							request.hasCategoryId() ? UUID.fromString(request.getCategoryId()) : null));
+					.and(MachineSpecification.isAvailable());
 
 			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {

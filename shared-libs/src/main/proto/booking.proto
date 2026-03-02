@@ -69,10 +69,11 @@ message Review {
   string id = 1;
   string booking_id = 2;
   string reviewer_id = 3;
-  int32 machine_rating = 4;
-  int32 owner_rating = 5;
-  string comment = 6;
-  rentitup.common.Timestamp created_at = 7;
+  string machine_id =4;
+  int32 machine_rating = 5;
+  int32 owner_rating = 6;
+  string comment = 7;
+  rentitup.common.Timestamp created_at = 8;
 }
 
 message CreateBookingRequest {
@@ -175,6 +176,14 @@ message ReviewsResponse {
   rentitup.common.PaginationResponse pagination = 2;
 }
 
+message Empty {
+
+}
+
+message ListReviewResponse{
+  repeated Review reviews =1;
+}
+
 
 service BookingService {
   rpc CreateBooking(CreateBookingRequest) returns (BookingResponse);
@@ -189,6 +198,7 @@ service BookingService {
   rpc UpdatePaymentStatus(UpdatePaymentStatusRequest) returns (PaymentResponse);
   rpc GetPaymentsByBooking(GetPaymentsByBookingRequest) returns (PaymentsResponse);
 
+  rpc GetAllReviews(Empty) returns (stream ListReviewResponse);
   rpc CreateReview(CreateReviewRequest) returns (ReviewResponse);
   rpc GetReviewsByMachine(GetReviewsByMachineRequest) returns (ReviewsResponse);
   rpc GetReviewsByOwner(GetReviewsByOwnerRequest) returns (ReviewsResponse);

@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -79,5 +80,10 @@ public class ReviewServiceImpl implements ReviewService {
 	public Page<ReviewEntity> getReviewsByOwner(UUID ownerId, Pageable pageable) {
 		log.info("Getting reviews for owner: {}", ownerId);
 		return reviewRepository.findByOwnerId(ownerId, pageable);
+	}
+
+	@Override
+	public List<ReviewEntity> getAllReviews() {
+		return reviewRepository.findAll();
 	}
 }

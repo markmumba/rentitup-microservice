@@ -4,6 +4,7 @@ import com.rentitup.booking_service.entities.ReviewEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ReviewService {
@@ -12,4 +13,6 @@ public interface ReviewService {
 	Page<ReviewEntity> getReviewsByMachine(UUID machineId, Pageable pageable);
 
 	Page<ReviewEntity> getReviewsByOwner(UUID ownerId, Pageable pageable);
+
+	List<ReviewEntity> getAllReviews();
 }

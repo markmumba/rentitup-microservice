@@ -15,8 +15,10 @@ include(
     "shared-libs",
     "common",
     "auth-server",
+    "bff",
     "booking-service",
     "catalog-service",
+    "cron-service",
     "service-registry",
-    "user-service",
-    "bff")
+    "user-service"
+)

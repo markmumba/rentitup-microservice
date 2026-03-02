@@ -15,6 +15,7 @@ public interface MachineService {
 	MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId);
 	String deleteMachine(UUID id);
 	Page<MachineEntity> findAll(Specification<MachineEntity> spec, Pageable pageable);
+	Page<MachineEntity> findFeaturedMachines(Specification<MachineEntity> spec, Pageable pageable);
 	List<MachineEntity> findAllByIds(List<UUID> ids);
 	MachineEntity addImage(UUID machineId, String url, boolean isPrimary);
 	MachineEntity removeImage(UUID machineId, UUID imageId);

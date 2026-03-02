@@ -38,6 +38,8 @@ dependencies {
         implementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
     }
 
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 

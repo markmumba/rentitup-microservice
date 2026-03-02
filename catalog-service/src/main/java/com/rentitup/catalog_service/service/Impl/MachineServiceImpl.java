@@ -120,6 +120,11 @@ public class MachineServiceImpl implements MachineService {
 	}
 
 	@Override
+	public Page<MachineEntity> findFeaturedMachines(Specification<MachineEntity> spec, Pageable pageable) {
+		return machineRepository.findAll(spec, pageable);
+	}
+
+	@Override
 	@Transactional(readOnly = true)
 	public List<MachineEntity> findAllByIds(List<UUID> ids) {
 		return machineRepository.findAllById(ids);

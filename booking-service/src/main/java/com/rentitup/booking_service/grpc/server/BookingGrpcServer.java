@@ -2,6 +2,7 @@ package com.rentitup.booking_service.grpc.server;
 
 import com.rentitup.booking_service.entities.BookingEntity;
 import com.rentitup.booking_service.entities.PaymentEntity;
+import com.rentitup.booking_service.entities.ReviewEntity;
 import com.rentitup.booking_service.enums.BookingStatus;
 import com.rentitup.booking_service.enums.PaymentType;
 import com.rentitup.booking_service.mapper.BookingMapper;
@@ -15,10 +16,12 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -280,6 +283,25 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 	}
 
 	@Override
+	public void getAllReviews(Empty request, StreamObserver<ListReviewResponse> responseObserver) {
+		try {
+			List<ReviewEntity> reviews = reviewService.getAllReviews();
+
+			ListReviewResponse response = ListReviewResponse.newBuilder()
+					.addAllReviews(reviews.stream()
+							.map(bookingMapper::toProto)
+							.toList()
+					)
+					.build();
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+
+		}catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "getAllReviews");
+		}
+	}
+
+	@Override
 	public void getReviewsByOwner(GetReviewsByOwnerRequest request, StreamObserver<ReviewsResponse> responseObserver) {
 		try {
 			log.info("gRPC: Get reviews for owner: {}", request.getOwnerId());
@@ -298,4 +320,5 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 			GrpcExceptionHandler.handleException(e, responseObserver, "getReviewsByOwner");
 		}
 	}
+
 }
