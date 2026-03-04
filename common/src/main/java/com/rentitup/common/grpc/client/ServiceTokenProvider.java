@@ -12,7 +12,6 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -36,25 +35,19 @@ public class ServiceTokenProvider {
 	}
 
 
-	public String getToken(Set<String> scopes) {
-		String scopeKey = String.join(" ", scopes);
-
-		CachedToken cached = tokenCache.get(scopeKey);
+	public String getToken() {
+		CachedToken cached = tokenCache.get("default");
 		if (cached != null && !cached.isExpired()) {
-			log.debug("Using cached service token for scope: {}", scopeKey);
+			log.debug("Using cached service token");
 			return cached.token;
 		}
-		log.info("Requesting new service token for scope: {}", scopeKey);
+		log.info("Requesting new service token");
 
-		return requestNewToken(scopes,scopeKey);
+		return requestNewToken();
 	}
 
-	public String getToken() {
-		return getToken(Set.of("internal"));
-	}
-
-	private synchronized String requestNewToken(Set<String> scopes,String scopeKey) {
-		CachedToken cached = tokenCache.get(scopeKey);
+	private synchronized String requestNewToken() {
+		CachedToken cached = tokenCache.get("default");
 		if (cached != null && !cached.isExpired()) {
 			return cached.token;
 		}
@@ -68,7 +61,6 @@ public class ServiceTokenProvider {
 
 		MultiValueMap<String,String> body = new LinkedMultiValueMap<>();
 		body.add("grant_type", "client_credentials");
-		body.add("scope", String.join(" ", scopes));
 
 		HttpEntity<MultiValueMap<String,String>> request = new HttpEntity<>(body, headers);
 		try {
@@ -82,7 +74,7 @@ public class ServiceTokenProvider {
 			int expiresIn = (Integer) responseBody.get("expires_in");
 
 			Instant expires = Instant.now().plusSeconds(expiresIn - REFRESH_BUFFER_SECONDS);
-			tokenCache.put(scopeKey, new CachedToken(token, expires));
+			tokenCache.put("default", new CachedToken(token, expires));
 			return token;
 		} catch (Exception e) {
 			log.error("Failed to obtain service token",e);

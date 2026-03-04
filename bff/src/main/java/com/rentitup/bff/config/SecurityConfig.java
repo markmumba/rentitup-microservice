@@ -44,11 +44,9 @@ public class SecurityConfig {
 						.requestMatchers("/", "/error").permitAll()
 						.requestMatchers("/actuator/**").permitAll()
 						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-						// Auth endpoints (registration, email check, session info)
 						.requestMatchers("/api/v1/auth/register", "/api/v1/auth/check-email").permitAll()
 						.requestMatchers("/api/v1/auth/login", "/api/v1/auth/logout").permitAll()
 						.requestMatchers("/api/v1/auth/me").authenticated()
-						// Public catalog endpoints
 						.requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/machines/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/reviews/machine/**").permitAll()

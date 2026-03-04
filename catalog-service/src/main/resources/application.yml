@@ -33,7 +33,6 @@ spring:
             client-id: catalog-service
             client-secret: catalog-secret
             authorization-grant-type: client_credentials
-            scope: internal,user:read
         provider:
           auth-server:
             token-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/token

@@ -96,7 +96,11 @@ public class AuthorizationServerConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers("/login", "/error").permitAll()
 						.anyRequest().authenticated()
-				).formLogin(Customizer.withDefaults());
+				)
+				.formLogin(form -> form
+						.loginPage("/login")
+						.permitAll()
+				);
 		return http.build();
 	}
 
@@ -122,10 +126,6 @@ public class AuthorizationServerConfig {
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
 				.redirectUri(redirectUri)
-				.scope("openid")
-				.scope("profile")
-				.scope("read")
-				.scope("write")
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofHours(1))
 						.refreshTokenTimeToLive(Duration.ofDays(7))
@@ -140,12 +140,6 @@ public class AuthorizationServerConfig {
 				.clientSecret(passwordEncoder.encode("bff-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.scope("internal")
-				.scope("user:read")
-				.scope("user:write")
-				.scope("catalog:read")
-				.scope("booking:read")
-				.scope("booking:write")
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofMinutes(30))
 						.build())
@@ -156,10 +150,6 @@ public class AuthorizationServerConfig {
 				.clientSecret(passwordEncoder.encode("catalog-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.scope("internal")
-				.scope("user:read")
-				.scope("machine:read")
-				.scope("machine:write")
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofMinutes(30))
 						.build())
@@ -170,9 +160,6 @@ public class AuthorizationServerConfig {
 				.clientSecret(passwordEncoder.encode("user-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.scope("internal")
-				.scope("user:read")
-				.scope("user:write")
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofMinutes(30))
 						.build())
@@ -183,11 +170,6 @@ public class AuthorizationServerConfig {
 				.clientSecret(passwordEncoder.encode("booking-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.scope("internal")
-				.scope("user:read")
-				.scope("catalog:read")
-				.scope("booking:read")
-				.scope("booking:write")
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofMinutes(30))
 						.build())
@@ -198,12 +180,6 @@ public class AuthorizationServerConfig {
 				.clientSecret(passwordEncoder.encode("cron-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.scope("internal")
-				.scope("user:read")
-				.scope("catalog:read")
-				.scope("catalog:write")
-				.scope("booking:read")
-				.scope("booking:write")
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofMinutes(30))
 						.build())
@@ -213,10 +189,6 @@ public class AuthorizationServerConfig {
 				.clientSecret(passwordEncoder.encode("notification-secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.scope("internal")
-				.scope("user:read")        // to fetch user details for notifications
-				.scope("booking:read")     // to fetch booking details for notifications
-				.scope("catalog:read")     // to fetch machine details for notifications
 				.tokenSettings(TokenSettings.builder()
 						.accessTokenTimeToLive(Duration.ofMinutes(30))
 						.build())

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in • Rentitup</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+<div class="w-full max-w-md">
+    <div
+            class="bg-slate-900/60 border border-slate-800/80 shadow-2xl shadow-slate-900/60 rounded-2xl p-8 backdrop-blur">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <div class="inline-flex items-center gap-2">
+                    <div class="h-8 w-8 rounded-xl bg-emerald-400/10 border border-emerald-400/40 flex items-center justify-center">
+                        <span class="text-emerald-400 font-semibold text-lg">R</span>
+                    </div>
+                    <span class="text-slate-50 font-semibold tracking-tight text-lg">Rentitup Auth</span>
+                </div>
+                <p class="mt-1 text-sm text-slate-400">
+                    Sign in to continue to your Rentitup workspace.
+                </p>
+            </div>
+        </div>
+
+        <form th:action="@{/login}" method="post" class="space-y-5">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div th:if="${hasError}" class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2.5 mb-2">
+                <p class="text-sm text-red-200">
+                    Invalid username or password. Please try again.
+                </p>
+            </div>
+
+            <div th:if="${hasLogout}" class="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 mb-2">
+                <p class="text-sm text-emerald-200">
+                    You have been signed out.
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <label for="username" class="block text-sm font-medium text-slate-200">
+                    Email
+                </label>
+                <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        autocomplete="username"
+                        required
+                        class="block w-full rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-slate-50 
+                               text-sm shadow-sm outline-none transition 
+                               focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/40
+                               placeholder:text-slate-500"
+                        placeholder="you@example.com" />
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <label for="password" class="block text-sm font-medium text-slate-200">
+                        Password
+                    </label>
+                </div>
+                <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                        class="block w-full rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-slate-50 
+                               text-sm shadow-sm outline-none transition 
+                               focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/40
+                               placeholder:text-slate-500"
+                        placeholder="••••••••" />
+            </div>
+
+            <button
+                    type="submit"
+                    class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-emerald-500 px-3 py-2.5 
+                           text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30
+                           transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 
+                           focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+                Sign in
+            </button>
+
+            <p class="mt-4 text-xs text-center text-slate-500">
+                This is the secure Rentitup authentication portal.
+            </p>
+        </form>
+    </div>
+</div>
+</body>
+</html>
+

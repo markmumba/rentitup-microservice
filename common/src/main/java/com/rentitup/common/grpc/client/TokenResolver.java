@@ -3,7 +3,6 @@ package com.rentitup.common.grpc.client;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -23,7 +22,7 @@ public class TokenResolver {
 		this(null, userTokenSupplier);
 	}
 
-	public String resolveToken(Set<String> requiredScopes) {
+	public String resolveToken() {
 		Optional<String> userToken = userTokenSupplier.get();
 		if (userToken.isPresent()) {
 			log.debug("Using user token for service call");
@@ -32,15 +31,11 @@ public class TokenResolver {
 
 		if (serviceTokenProvider != null) {
 			log.debug("No user token available, using service token");
-			return serviceTokenProvider.getToken(requiredScopes);
+			return serviceTokenProvider.getToken();
 		}
 
 		log.warn("No user token and no service token provider configured");
 		return null;
-	}
-
-	public String resolveToken() {
-		return resolveToken(Set.of("internal"));
 	}
 
 	public boolean hasUserToken() {

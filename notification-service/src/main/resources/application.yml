@@ -61,7 +61,6 @@ spring:
             client-id: notification-service
             client-secret: notification-secret
             authorization-grant-type: client_credentials
-            scope: internal,user:read,booking:read,catalog:read
         provider:
           auth-server:
             token-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/token

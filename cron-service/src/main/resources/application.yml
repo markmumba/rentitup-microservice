@@ -17,12 +17,6 @@ spring:
             client-id: cron-service
             client-secret: cron-secret
             authorization-grant-type: client_credentials
-            # Scopes this service can request when calling other services
-            # internal    - identifies as internal service
-            # user:read   - can fetch user data
-            # catalog:read/write - can read/update machines (e.g., maintenance status)
-            # booking:read/write - can read/update bookings (e.g., expire old bookings)
-            scope: internal,user:read,catalog:read,catalog:write,booking:read,booking:write
         provider:
           auth-server:
             token-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/token

@@ -4,8 +4,6 @@ import io.grpc.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Set;
-
 
 @Slf4j
 @RequiredArgsConstructor
@@ -25,8 +23,7 @@ public class BearerTokenInterceptor implements ClientInterceptor {
 		return new ForwardingClientCall.SimpleForwardingClientCall<>(next.newCall(method, callOptions)) {
 			@Override
 			public void start(Listener<RespT> responseListener, Metadata headers) {
-				Set<String> scopes = determineScopesForMethod(method);
-				String token = tokenResolver.resolveToken(scopes);
+				String token = tokenResolver.resolveToken();
 
 				if (token != null && !token.isEmpty()) {
 					String authValue = token.startsWith("Bearer ") ? token : "Bearer " + token;
@@ -48,20 +45,4 @@ public class BearerTokenInterceptor implements ClientInterceptor {
 			}
 		};
 	}
-
-
-	private Set<String> determineScopesForMethod(MethodDescriptor<?, ?> method) {
-		String serviceName = method.getServiceName();
-
-		if (serviceName.contains("Catalog")) {
-			return Set.of("internal", "machine:read");
-		} else if (serviceName.contains("User")) {
-			return Set.of("internal", "user:read");
-		} else if (serviceName.contains("Booking")) {
-			return Set.of("internal", "booking:write");
-		}
-
-		return Set.of("internal");
-	}
-
 }

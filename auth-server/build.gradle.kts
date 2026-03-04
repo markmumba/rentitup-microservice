@@ -9,6 +9,7 @@ description = "Authentication server to control security on the platform"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
+	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-h2console")
 	runtimeOnly("com.h2database:h2")
 	implementation(project(":shared-libs"))

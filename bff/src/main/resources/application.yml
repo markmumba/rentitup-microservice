@@ -25,13 +25,11 @@ spring:
             client-secret: bff-gateway-secret
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-            scope: openid,profile,read,write
             client-authentication-method: client_secret_basic
           bff-service:
             client-id: bff-service
             client-secret: bff-secret
             authorization-grant-type: client_credentials
-            scope: internal,user:write,user:read,catalog:read
         provider:
           bff-gateway:
             issuer-uri: ${AUTH_SERVER_URL:http://localhost:9000}
