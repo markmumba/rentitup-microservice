@@ -42,3 +42,4 @@ catalog-service/.env
 docs
 *.hprof
 
+java/com/rentitup/common/grpc/README.md

@@ -2,23 +2,41 @@ package com.rentitup.common.grpc.client;
 
 import com.rentitup.common.grpc.GrpcChannelFactory;
 import io.grpc.Channel;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 
 
-@RequiredArgsConstructor
 public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 
 	private static final Logger log = LoggerFactory.getLogger(GrpcClientBeanPostProcessor.class);
 
-	private final GrpcChannelFactory channelFactory;
+	private final ObjectProvider<GrpcChannelFactory> channelFactoryProvider;
+	private volatile GrpcChannelFactory channelFactory;
+
+	public GrpcClientBeanPostProcessor(ObjectProvider<GrpcChannelFactory> channelFactoryProvider) {
+		this.channelFactoryProvider = channelFactoryProvider;
+	}
+
+	private GrpcChannelFactory getChannelFactory() {
+		if (channelFactory == null) {
+			synchronized (this) {
+				if (channelFactory == null) {
+					channelFactory = channelFactoryProvider.getIfAvailable();
+					if (channelFactory == null) {
+						log.warn("GrpcChannelFactory not available - gRPC client injection will be skipped");
+					}
+				}
+			}
+		}
+		return channelFactory;
+	}
 
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, @NonNull String beanName) throws BeansException {
@@ -45,7 +63,12 @@ public class GrpcClientBeanPostProcessor implements BeanPostProcessor {
 
 	private Object createStub(Class<?> stubClass, String serviceName) {
 		try {
-			Channel channel = channelFactory.getChannel(serviceName);
+			GrpcChannelFactory factory = getChannelFactory();
+			if (factory == null) {
+				log.error("Cannot create gRPC stub for service '{}' - GrpcChannelFactory not available", serviceName);
+				return null;
+			}
+			Channel channel = factory.getChannel(serviceName);
 
 			// Find the enclosing gRPC service class (e.g., UserServiceGrpc)
 			Class<?> grpcServiceClass = stubClass.getEnclosingClass();

@@ -18,8 +18,7 @@ dependencyManagement {
 }
 
 dependencies {
-	// Spring Security for JWT validation
-	implementation("org.springframework.boot:spring-boot-starter-security")
+	// Spring Security for JWT validation and SecurityUtils
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 	implementation(project(":shared-libs"))
 

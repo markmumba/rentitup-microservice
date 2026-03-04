@@ -30,7 +30,7 @@ public class AuthController {
 	private String frontendUrl;
 
 	@GrpcClient("USER-SERVICE")
-	private UserServiceGrpc.UserServiceBlockingStub userServiceStub;
+	private  UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
 	/**
 	 * Initiates OAuth2 login flow.

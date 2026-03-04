@@ -32,13 +32,11 @@ dependencyManagement {
 }
 
 dependencies {
-    // Protobuf version constraints
-    constraints {
-        implementation("com.google.protobuf:protobuf-java:$protobufVersion")
-        implementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
-    }
+    // Protobuf
+    implementation("com.google.protobuf:protobuf-java:$protobufVersion")
+    implementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
 
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -46,9 +44,6 @@ dependencies {
     // Web server
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
-    // Security
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
 
     // Eureka Client for service discovery
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
@@ -69,7 +64,6 @@ dependencies {
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

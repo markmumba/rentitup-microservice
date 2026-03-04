@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8085
 
 spring:
   application:
@@ -68,7 +68,7 @@ spring:
 
   grpc:
     server:
-      port: 9096
+      port: 9094
 
 eureka:
   client:

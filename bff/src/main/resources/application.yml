@@ -61,3 +61,7 @@ springdoc:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
+grpc:
+  client:
+    oauth2-registration: bff-service  # Use bff-service registration for service tokens
+

@@ -49,23 +49,27 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 		String methodName = call.getMethodDescriptor().getFullMethodName();
 		boolean isPublicMethod = publicMethods.contains(methodName);
 
-		log.debug("Intercepting call to: {} (public: {})", methodName, isPublicMethod);
+		log.info("[gRPC-SERVER] Incoming call: {} (public: {})", methodName, isPublicMethod);
 
 		String authHeader = headers.get(AUTHORIZATION_HEADER);
 		Context context;
 
 		if (authHeader != null && authHeader.startsWith("Bearer ")) {
 			String token = authHeader.substring(7);
+			String tokenPreview = token.length() > 20 ? token.substring(0, 20) + "..." : token;
+			log.info("[gRPC-SERVER] Token received: {}", tokenPreview);
+
 			try {
 				Jwt jwt = jwtDecoder.decode(token);
-				context = buildAuthenticatedContext(jwt,token);
+				context = buildAuthenticatedContext(jwt, token);
 
-				log.debug("Valid token for user: {} (type: {})",
+				log.info("[gRPC-SERVER] Authenticated: email={}, type={}, userId={}",
 						jwt.getClaimAsString("email"),
-						jwt.getClaimAsString("token_type"));
+						jwt.getClaimAsString("token_type"),
+						jwt.getClaimAsString("user_id"));
 
 			} catch (JwtException e) {
-				log.warn("Invalid JWT token: {}", e.getMessage());
+				log.warn("[gRPC-SERVER] Invalid JWT token: {}", e.getMessage());
 
 				if (!isPublicMethod) {
 					call.close(
@@ -78,8 +82,10 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 				context = buildUnauthenticatedContext();
 			}
 		} else {
+			log.info("[gRPC-SERVER] No token in request for: {}", methodName);
+
 			if (!isPublicMethod) {
-				log.warn("No token provided for protected method: {}", methodName);
+				log.warn("[gRPC-SERVER] Rejecting unauthenticated request to protected method: {}", methodName);
 				call.close(
 						Status.UNAUTHENTICATED.withDescription("Authentication required"),
 						new Metadata()

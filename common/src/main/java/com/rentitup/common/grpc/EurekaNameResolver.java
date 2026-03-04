@@ -21,6 +21,7 @@ public class EurekaNameResolver extends NameResolver {
 	private final EurekaClient eurekaClient;
 	private Listener2 listener;
 	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+	private final String PORT_METADATA_KEY = "grpc-port";
 
 	public EurekaNameResolver(String serviceName, EurekaClient eurekaClient) {
 		this.serviceName = serviceName;
@@ -46,9 +47,8 @@ public class EurekaNameResolver extends NameResolver {
 				.map(instance -> {
 					String host = instance.getHostName();
 					int port = Integer.parseInt(
-							instance.getMetadata().getOrDefault("grpc-port", "9000")
+							instance.getMetadata().getOrDefault(PORT_METADATA_KEY, "9000")
 					);
-					log.info("Eureka NameResolver: host={}, port={}", host, port);
 					return new EquivalentAddressGroup(
 							new InetSocketAddress(host, port)
 					);

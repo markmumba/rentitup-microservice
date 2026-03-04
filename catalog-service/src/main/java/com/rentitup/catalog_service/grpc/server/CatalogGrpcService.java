@@ -10,6 +10,7 @@ import com.rentitup.catalog_service.service.StorageService;
 import com.rentitup.catalog_service.specification.MachineSpecification;
 import com.rentitup.common.util.PaginationHelper;
 import com.rentitup.shared.proto.catalog.*;
+import com.rentitup.shared.proto.common.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
