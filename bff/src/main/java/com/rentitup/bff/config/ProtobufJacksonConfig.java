@@ -12,10 +12,6 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.StdSerializer;
 
-/**
- * Configures Jackson 3 to properly serialize Protobuf messages
- * when they are nested inside regular Java objects (like BaseResponse).
- */
 @Configuration
 public class ProtobufJacksonConfig {
 

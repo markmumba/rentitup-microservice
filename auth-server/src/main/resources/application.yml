@@ -27,5 +27,5 @@ eureka:
       auth-issuer-uri: ${AUTH_SERVER_EXTERNAL_URL:http://localhost:9000}
 
 auth:
-  external-url: ${AUTH_SERVER_EXTERNAL_URL:http://localhost:9000}
+  external-url: ${AUTH_SERVER_EXTERNAL_URL:http://127.0.0.1:9000}
   redirect-uri: ${BFF_EXTERNAL_URL:http://localhost:8080}/login/oauth2/code/bff-gateway
