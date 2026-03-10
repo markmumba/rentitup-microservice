@@ -4,4 +4,6 @@ plugins {
 
 group = "com.rentitup"
 version = "0.0.1-SNAPSHOT"
-description = "Shared libs for the Rentitup microservices"
+description = "Shared proto definitions and generated gRPC code for Rentitup microservices"
+
+// No additional dependencies needed - java-library-conventions provides gRPC/protobuf

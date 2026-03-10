@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+        .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #6b7280; }
+        .detail-value { font-weight: 600; }
+        .total { font-size: 1.25em; color: #2563eb; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 0.875em; }
+        .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Booking Confirmed!</h1>
+    </div>
+    <div class="content">
+        <p>Hi <span th:text="${userName}">Customer</span>,</p>
+        <p>Great news! Your booking has been confirmed. Here are your booking details:</p>
+
+        <div class="booking-details">
+            <div class="detail-row">
+                <span class="detail-label">Booking ID</span>
+                <span class="detail-value" th:text="${bookingId}">#12345</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Equipment</span>
+                <span class="detail-value" th:text="${machineName}">Excavator</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Start Date</span>
+                <span class="detail-value" th:text="${startDate}">March 15, 2026</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">End Date</span>
+                <span class="detail-value" th:text="${endDate}">March 20, 2026</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Pickup Location</span>
+                <span class="detail-value" th:text="${pickupLocation ?: 'To be confirmed'}">Nairobi</span>
+            </div>
+            <div class="detail-row total">
+                <span class="detail-label">Total Amount</span>
+                <span class="detail-value" th:text="${totalAmount}">KES 50,000</span>
+            </div>
+        </div>
+
+        <p>Please arrive on time for pickup. If you have any questions, contact the equipment owner or our support team.</p>
+
+        <center>
+            <a href="#" class="button">View Booking Details</a>
+        </center>
+    </div>
+    <div class="footer">
+        <p>Thank you for using <span th:text="${appName}">RentItUp</span>!</p>
+        <p>Questions? Contact us at <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}">support@rentitup.com</a></p>
+    </div>
+</body>
+</html>

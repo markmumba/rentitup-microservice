@@ -2,7 +2,7 @@ syntax = "proto3";
 package rentitup.booking;
 
 option java_multiple_files=true;
-option java_package = "rentitup.shared.proto.booking";
+option java_package = "com.rentitup.shared.proto.booking";
 option java_outer_classname = "BookingProto";
 
 import "common.proto";
@@ -22,6 +22,13 @@ enum PaymentType {
   DEPOSIT = 1;
   FULL_PAYMENT = 2;
   SECURITY_DEPOSIT = 3;
+}
+
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED=0;
+  BANK_TRANSFER=1;
+  MPESA=2;
+  CASH=3;
 }
 
 enum PaymentStatus {
@@ -62,10 +69,13 @@ message Review {
   string id = 1;
   string booking_id = 2;
   string reviewer_id = 3;
-  int32 machine_rating = 4;
-  int32 owner_rating = 5;
-  string comment = 6;
-  rentitup.common.Timestamp created_at = 7;
+  string machine_id = 4;
+  int32 machine_rating = 5;
+  int32 owner_rating = 6;
+  string comment = 7;
+  rentitup.common.Timestamp created_at = 8;
+  bool rating_synced = 9;                      // Has this review been synced to machine rating?
+  rentitup.common.Timestamp synced_at = 10;    // When was it synced?
 }
 
 message CreateBookingRequest {
@@ -73,8 +83,11 @@ message CreateBookingRequest {
   string customer_id = 2;
   rentitup.common.Timestamp start_date = 3;
   rentitup.common.Timestamp end_date =4;
-  rentitup.common.Location pickup_location = 5;
-  string special_requirements = 6;
+  optional int32 hours=5;
+  optional int32 weeks=6;
+  optional int32 distance=7;
+  rentitup.common.Location pickup_location = 8;
+  string special_requirements = 9;
 }
 
 message GetBookingRequest {
@@ -119,6 +132,7 @@ message CreatePaymentRequest {
   string booking_id = 1;
   rentitup.common.Money amount = 2;
   PaymentType payment_type = 3;
+  string transaction_id=4;
 }
 
 message UpdatePaymentStatusRequest {
@@ -165,6 +179,19 @@ message ReviewsResponse {
 }
 
 
+message ListReviewResponse {
+  repeated Review reviews = 1;
+}
+
+message MarkReviewsSyncedRequest {
+  repeated string review_ids = 1;
+}
+
+message MarkReviewsSyncedResponse {
+  int32 updated_count = 1;
+}
+
+
 service BookingService {
   rpc CreateBooking(CreateBookingRequest) returns (BookingResponse);
   rpc GetBooking(GetBookingRequest) returns (BookingResponse);
@@ -178,6 +205,9 @@ service BookingService {
   rpc UpdatePaymentStatus(UpdatePaymentStatusRequest) returns (PaymentResponse);
   rpc GetPaymentsByBooking(GetPaymentsByBookingRequest) returns (PaymentsResponse);
 
+  rpc GetAllReviews(rentitup.common.Empty) returns (stream ListReviewResponse);
+  rpc GetUnsyncedReviews(rentitup.common.Empty) returns (stream ListReviewResponse);
+  rpc MarkReviewsSynced(MarkReviewsSyncedRequest) returns (MarkReviewsSyncedResponse);
   rpc CreateReview(CreateReviewRequest) returns (ReviewResponse);
   rpc GetReviewsByMachine(GetReviewsByMachineRequest) returns (ReviewsResponse);
   rpc GetReviewsByOwner(GetReviewsByOwnerRequest) returns (ReviewsResponse);

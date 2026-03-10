@@ -6,6 +6,7 @@ import com.rentitup.catalog_service.enums.MachineStatus;
 import com.rentitup.catalog_service.enums.PriceCalculationType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -20,13 +21,13 @@ import java.util.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class MachineEntity extends BaseEntity {
 
 	@Column(name = "owner_id", nullable = false)
 	private UUID ownerId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "category_id", nullable = false)
 	private CategoryEntity category;
 

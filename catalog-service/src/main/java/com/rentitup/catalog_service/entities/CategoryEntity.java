@@ -5,6 +5,7 @@ import com.rentitup.catalog_service.enums.PriceCalculationType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Formula;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,7 @@ public class CategoryEntity extends BaseEntity {
 	@Builder.Default
 	private List<MachineEntity> machines = new ArrayList<>();
 
-	public int getMachineCount() {
-		return machines != null ? machines.size() : 0;
-	}
+	@Formula("(SELECT COUNT(*) FROM machines m WHERE m.category_id = id)")
+	private int machineCount;
 
 }

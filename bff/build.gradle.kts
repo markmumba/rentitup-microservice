@@ -1,5 +1,5 @@
 plugins {
-	id("buildlogic.microservice-conventions")
+	id("buildlogic.cloud-service-conventions")
 }
 
 group = "com.rentitup"
@@ -7,9 +7,11 @@ version = "0.0.1-SNAPSHOT"
 description = "Backend for Frontend (BFF) for Rentitup"
 
 dependencies {
-	implementation("com.google.protobuf:protobuf-java-util")
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 	implementation(project(":shared-libs"))
-
+	implementation(project(":common"))
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 }
 

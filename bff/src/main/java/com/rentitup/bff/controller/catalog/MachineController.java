@@ -1,8 +1,10 @@
 package com.rentitup.bff.controller.catalog;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
+import com.rentitup.bff.common.proto.ProtoJsonUtil;
 import com.rentitup.bff.common.response.ResponseBuilder;
-import com.rentitup.bff.grpc.GrpcStubFactory;
+import com.rentitup.bff.common.security.SecurityUtils;
+import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.catalog.*;
 import com.rentitup.shared.proto.common.Location;
 import com.rentitup.shared.proto.common.Money;
@@ -11,29 +13,32 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/machines")
-@RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Machines", description = "Machine management endpoints")
 public class MachineController {
-	private final GrpcStubFactory grpcStubFactory;
+
+	@GrpcClient("CATALOG-SERVICE")
+	private CatalogServiceGrpc.CatalogServiceBlockingStub catalogServiceStub;
 
 	// ==================== Machine CRUD ====================
 
 	@Operation(summary = "Create a new machine", description = "Creates a new machine listing")
 	@PostMapping
 	public ResponseEntity<?> createMachine(@Valid @RequestBody CreateMachineRequest request) {
-		log.info("REST: Create machine request: {}", request.getName());
-		MachineResponse response = grpcStubFactory.getCatalogStub().createMachine(request);
-		return ResponseBuilder.created("Machine created successfully", response.getMachine());
+		String ownerId = SecurityUtils.getCurrentUserId();
+		log.info("REST: Create machine request: name={} categoryId={} ownerId={}", request.getName(), request.getCategoryId(), ownerId);
+
+		MachineResponse response = catalogServiceStub.createMachine(request);
+		return ResponseBuilder.created("Machine created successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Get machine by ID", description = "Retrieves a single machine with optional owner and reviews")
@@ -48,8 +53,8 @@ public class MachineController {
 				.setIncludeOwner(includeOwner)
 				.setIncludeReviews(includeReviews)
 				.build();
-		MachineResponse response = grpcStubFactory.getCatalogStub().getMachine(request);
-		return ResponseBuilder.success("Machine retrieved successfully", response.getMachine());
+		MachineResponse response = catalogServiceStub.getMachine(request);
+		return ResponseBuilder.success("Machine retrieved successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Update a machine", description = "Updates an existing machine")
@@ -74,8 +79,8 @@ public class MachineController {
 		}
 		if (request.hasIsAvailable()) builder.setIsAvailable(request.getIsAvailable());
 
-		MachineResponse response = grpcStubFactory.getCatalogStub().updateMachine(builder.build());
-		return ResponseBuilder.success("Machine updated successfully", response.getMachine());
+		MachineResponse response = catalogServiceStub.updateMachine(builder.build());
+		return ResponseBuilder.success("Machine updated successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Delete a machine", description = "Soft deletes a machine")
@@ -85,7 +90,7 @@ public class MachineController {
 		DeleteMachineRequest request = DeleteMachineRequest.newBuilder()
 				.setId(id)
 				.build();
-		DeleteMachineResponse response = grpcStubFactory.getCatalogStub().deleteMachine(request);
+		DeleteMachineResponse response = catalogServiceStub.deleteMachine(request);
 		return ResponseBuilder.success(response.getMessage(), null);
 	}
 
@@ -108,7 +113,7 @@ public class MachineController {
 		if (status != null) builder.setStatus(status);
 		if (minCondition != null) builder.setMinCondition(minCondition);
 
-		ListMachinesResponse response = grpcStubFactory.getCatalogStub().listMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.listMachines(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -156,7 +161,7 @@ public class MachineController {
 			if (radiusKm != null) builder.setRadiusKm(radiusKm);
 		}
 
-		ListMachinesResponse response = grpcStubFactory.getCatalogStub().searchMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.searchMachines(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -175,7 +180,7 @@ public class MachineController {
 
 		if (status != null) builder.setStatus(status);
 
-		ListMachinesResponse response = grpcStubFactory.getCatalogStub().getMachinesByOwner(builder.build());
+		ListMachinesResponse response = catalogServiceStub.getMachinesByOwner(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -191,8 +196,8 @@ public class MachineController {
 
 		if (categoryId != null) builder.setCategoryId(categoryId);
 
-		ListMachinesResponse response = grpcStubFactory.getCatalogStub().getFeaturedMachines(builder.build());
-		return ResponseBuilder.success("Featured machines retrieved", response.getMachinesList());
+		ListMachinesResponse response = catalogServiceStub.getFeaturedMachines(builder.build());
+		return ResponseBuilder.success("Featured machines retrieved", ProtoJsonUtil.toMapList(response.getMachinesList()));
 	}
 
 	@Operation(summary = "Get nearby machines", description = "Retrieves machines within a specified radius of a location")
@@ -216,7 +221,7 @@ public class MachineController {
 
 		if (categoryId != null) builder.setCategoryId(categoryId);
 
-		ListMachinesResponse response = grpcStubFactory.getCatalogStub().getNearbyMachines(builder.build());
+		ListMachinesResponse response = catalogServiceStub.getNearbyMachines(builder.build());
 		return buildMachineListResponse(response);
 	}
 
@@ -236,8 +241,8 @@ public class MachineController {
 				.setContentType(contentType)
 				.build();
 
-		GetUploadUrlResponse response = grpcStubFactory.getCatalogStub().getUploadUrl(request);
-		return ResponseBuilder.success("Upload URL generated", response);
+		GetUploadUrlResponse response = catalogServiceStub.getUploadUrl(request);
+		return ResponseBuilder.success("Upload URL generated", ProtoJsonUtil.toMap(response));
 	}
 
 	@Operation(summary = "Add machine image", description = "Adds an image to a machine after uploading")
@@ -253,8 +258,8 @@ public class MachineController {
 				.setIsPrimary(request.getIsPrimary())
 				.build();
 
-		MachineResponse response = grpcStubFactory.getCatalogStub().addMachineImage(grpcRequest);
-		return ResponseBuilder.created("Image added successfully", response.getMachine());
+		MachineResponse response = catalogServiceStub.addMachineImage(grpcRequest);
+		return ResponseBuilder.created("Image added successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Remove machine image", description = "Removes an image from a machine")
@@ -269,8 +274,8 @@ public class MachineController {
 				.setImageId(imageId)
 				.build();
 
-		MachineResponse response = grpcStubFactory.getCatalogStub().removeMachineImage(request);
-		return ResponseBuilder.success("Image removed successfully", response.getMachine());
+		MachineResponse response = catalogServiceStub.removeMachineImage(request);
+		return ResponseBuilder.success("Image removed successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Set primary image", description = "Sets an image as the primary image for a machine")
@@ -285,8 +290,8 @@ public class MachineController {
 				.setImageId(imageId)
 				.build();
 
-		MachineResponse response = grpcStubFactory.getCatalogStub().setPrimaryImage(request);
-		return ResponseBuilder.success("Primary image set successfully", response.getMachine());
+		MachineResponse response = catalogServiceStub.setPrimaryImage(request);
+		return ResponseBuilder.success("Primary image set successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	// ==================== Maintenance Records ====================
@@ -308,8 +313,8 @@ public class MachineController {
 			builder.setNextServiceDate(request.getNextServiceDate());
 		}
 
-		MaintenanceRecordResponse response = grpcStubFactory.getCatalogStub().addMaintenanceRecord(builder.build());
-		return ResponseBuilder.created("Maintenance record added", response.getRecord());
+		MaintenanceRecordResponse response = catalogServiceStub.addMaintenanceRecord(builder.build());
+		return ResponseBuilder.created("Maintenance record added", ProtoJsonUtil.toMap(response.getRecord()));
 	}
 
 	@Operation(summary = "Get maintenance history", description = "Retrieves maintenance history for a machine")
@@ -325,7 +330,7 @@ public class MachineController {
 				.setPagination(buildPaginationRequest(page, size))
 				.build();
 
-		MaintenanceHistoryResponse response = grpcStubFactory.getCatalogStub().getMaintenanceHistory(request);
+		MaintenanceHistoryResponse response = catalogServiceStub.getMaintenanceHistory(request);
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())
@@ -333,7 +338,7 @@ public class MachineController {
 				.build();
 
 		return ResponseBuilder.successPageResponse(
-				response.getRecordsList(),
+				ProtoJsonUtil.toMapList(response.getRecordsList()),
 				paginationDto,
 				response.getPagination().getTotalElements()
 		);
@@ -351,7 +356,7 @@ public class MachineController {
 				.setDaysAhead(daysAhead)
 				.build();
 
-		MaintenanceHistoryResponse response = grpcStubFactory.getCatalogStub().getUpcomingMaintenance(request);
+		MaintenanceHistoryResponse response = catalogServiceStub.getUpcomingMaintenance(request);
 
 		PaginationDto paginationDto = PaginationDto.builder()
 				.page(response.getPagination().getCurrentPage())
@@ -359,7 +364,7 @@ public class MachineController {
 				.build();
 
 		return ResponseBuilder.successPageResponse(
-				response.getRecordsList(),
+				ProtoJsonUtil.toMapList(response.getRecordsList()),
 				paginationDto,
 				response.getPagination().getTotalElements()
 		);
@@ -380,7 +385,7 @@ public class MachineController {
 				.limit(response.getPagination().getPageSize())
 				.build();
 
-		List<Machine> machines = response.getMachinesList();
+		List<Map<String, Object>> machines = ProtoJsonUtil.toMapList(response.getMachinesList());
 		return ResponseBuilder.successPageResponse(
 				machines,
 				paginationDto,

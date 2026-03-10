@@ -51,13 +51,14 @@ message MachineImage {
 }
 
 message MaintenanceRecord {
-  string id= 1;
-  string machine_id =2;
-  rentitup.common.Date service_date =3;
-  string description =4;
-  string performed_by =5;
-  rentitup.common.Date next_service_date =6;
+  string id = 1;
+  string machine_id = 2;
+  rentitup.common.Date service_date = 3;
+  string description = 4;
+  string performed_by = 5;
+  rentitup.common.Date next_service_date = 6;
   rentitup.common.Timestamp created_at = 7;
+  rentitup.common.Timestamp reminder_sent_at = 8;  // When was the last reminder sent?
 }
 
 message  Machine {
@@ -309,6 +310,13 @@ message GetMachineBatchRequest {
   repeated string machine_ids =1;
 }
 
+message GetMachineIdsRequest {
+  string owner_id = 1;
+}
+message GetMachineIdsResponse {
+  repeated string machine_ids =1;
+}
+
 message GetMachinesBatchResponse {
   map<string, Machine> machines = 1;
 }
@@ -317,6 +325,28 @@ message UpdateMachineRatingRequest {
   string machine_id = 1;
   double new_average_rating = 2;
   int32 total_reviews = 3;
+}
+
+message UpdateMachineBookingsRequest{
+  string machine_id =1;
+}
+
+
+
+message ListMaintenanceRecordResponse{
+  repeated MaintenanceRecord records = 1;
+}
+
+message GetMaintenanceRecordsNeedingReminderRequest {
+  int32 days_ahead = 1;  // Records with next_service_date within this many days
+}
+
+message MarkMaintenanceRemindedRequest {
+  repeated string record_ids = 1;
+}
+
+message MarkMaintenanceRemindedResponse {
+  int32 updated_count = 1;
 }
 
 service CatalogService {
@@ -346,14 +376,22 @@ service CatalogService {
   rpc GetMaintenanceHistory (GetMaintenanceHistoryRequest) returns (MaintenanceHistoryResponse);
   rpc GetUpcomingMaintenance (GetUpcomingMaintenanceRequest) returns (MaintenanceHistoryResponse);
 
+  rpc GetMaintenanceRecords(rentitup.common.Empty) returns (stream ListMaintenanceRecordResponse);
+
+  // For cron service to get records needing reminders and mark them as reminded
+  rpc GetMaintenanceRecordsNeedingReminder(GetMaintenanceRecordsNeedingReminderRequest) returns (stream ListMaintenanceRecordResponse);
+  rpc MarkMaintenanceReminded(MarkMaintenanceRemindedRequest) returns (MarkMaintenanceRemindedResponse);
+
   // for the booking service to check availability
   rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
-  rpc UpdateMachineStatus(UpdateMachineRatingRequest) returns (MachineResponse);
+  rpc UpdateMachineStatus(UpdateMachineStatusRequest) returns (MachineResponse);
+  rpc GetMachineIdsByOwner(GetMachineIdsRequest) returns (GetMachineIdsResponse);
 
   rpc GetMachinesBatch(GetMachineBatchRequest) returns (GetMachinesBatchResponse);
 
   // called by the review service to update the rating of the given machine
   rpc UpdateMachineRating (UpdateMachineRatingRequest) returns (MachineResponse);
+  rpc UpdateMachineBookings (UpdateMachineBookingsRequest) returns(MachineResponse);
 
 }
 

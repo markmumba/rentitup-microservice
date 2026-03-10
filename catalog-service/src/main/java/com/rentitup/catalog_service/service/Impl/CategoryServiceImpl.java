@@ -3,7 +3,8 @@ package com.rentitup.catalog_service.service.Impl;
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.service.CategoryService;
-import com.rentitup.shared_libs.exceptions.BadRequestException;
+import com.rentitup.common.exceptions.ConflictException;
+import com.rentitup.common.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,7 +24,7 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public CategoryEntity createCategory(CategoryEntity category) {
 		if (categoryRepository.findByName(category.getName()).isPresent()) {
-			throw new BadRequestException("Category already exists : " + category.getName());
+			throw new ConflictException("Category already exists: " + category.getName());
 		}
 
 		CategoryEntity saved = categoryRepository.save(category);
@@ -35,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
 	public CategoryEntity getCategoryById(UUID id) {
 		log.info("Retrieving category id={}", id);
 		return categoryRepository.findById(id).orElseThrow(
-				() -> new BadRequestException("Category not found with id=" + id)
+				() -> new NotFoundException("Category not found: " + id)
 		);
 
 	}
@@ -43,11 +44,11 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public Page<CategoryEntity> getCategories(Pageable pageable, boolean includeEmpty) {
 		log.info("Retrieving categories including empty={}", includeEmpty);
-		if (includeEmpty) {
+		if (!includeEmpty) {
 			return categoryRepository.findAllWithMachines(pageable);
 		}
-		return categoryRepository.findAll(pageable);
-
+		Page<CategoryEntity> categories=  categoryRepository.findAll(pageable);
+		return categories;
 	}
 
 
@@ -57,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
 		CategoryEntity existing = getCategoryById(id);
 		if (updates.getName() != null && !updates.getName().equals(existing.getName())) {
 			if(categoryRepository.findByName(updates.getName()).isPresent()) {
-				throw new BadRequestException("Category already exists : " + updates.getName());
+				throw new ConflictException("Category already exists: " + updates.getName());
 			}
 			existing.setName(updates.getName());
 		}
@@ -77,7 +78,7 @@ public class CategoryServiceImpl implements CategoryService {
 	public void deleteCategoryById(UUID id) {
 		log.info("Deleting category id={}", id);
 		CategoryEntity saved = categoryRepository.findById(id).orElseThrow(
-				() -> new BadRequestException("Category not found with id=" + id)
+				() -> new NotFoundException("Category not found: " + id)
 		);
 		categoryRepository.delete(saved);
 	}

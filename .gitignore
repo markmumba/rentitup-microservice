@@ -39,3 +39,7 @@ HELP.md
 ARCHITECTURE.md
 .env
 catalog-service/.env
+docs
+*.hprof
+
+common/src/main/java/com/rentitup/common/grpc/README.md

@@ -13,6 +13,14 @@ plugins {
 rootProject.name = "backend"
 include(
     "shared-libs",
+    "common",
+    "auth-server",
+    "bff",
+    "booking-service",
     "catalog-service",
+    "config-server",
+    "cron-service",
+    "notification-service",
     "service-registry",
-    "bff")
+    "user-service"
+)

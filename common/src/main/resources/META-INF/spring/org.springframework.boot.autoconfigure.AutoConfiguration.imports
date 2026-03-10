@@ -1,0 +1,5 @@
+com.rentitup.common.grpc.GrpcAutoConfiguration
+com.rentitup.common.grpc.client.GrpcClientsAutoConfiguration
+com.rentitup.common.grpc.client.GrpcTokenAutoConfiguration
+com.rentitup.common.grpc.server.GrpcSecurityConfig
+com.rentitup.common.grpc.server.GrpcAuthAutoConfiguration

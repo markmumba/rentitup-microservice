@@ -27,8 +27,7 @@ import java.util.UUID;
 )
 public interface CatalogMapper {
 
-	@Mapping(target = "id", expression = "java(entity.getId().toString())")
-	@Mapping(target = "machineCount", expression = "java(entity.getMachineCount())")
+	@Mapping(target = "machineCount", source = "machineCount")
 	@Mapping(target = "mergeFrom", ignore = true)
 	@Mapping(target = "clearField", ignore = true)
 	@Mapping(target = "clearOneof", ignore = true)
@@ -286,8 +285,21 @@ public interface CatalogMapper {
 		if (entity.getCreatedAt() != null) {
 			builder.setCreatedAt(mapLocalDateTime(entity.getCreatedAt()));
 		}
+		if (entity.getReminderSentAt() != null) {
+			builder.setReminderSentAt(mapInstant(entity.getReminderSentAt()));
+		}
 
 		return builder.build();
+	}
+
+	default Timestamp mapInstant(Instant instant) {
+		if (instant == null) {
+			return Timestamp.getDefaultInstance();
+		}
+		return Timestamp.newBuilder()
+				.setSeconds(instant.getEpochSecond())
+				.setNanos(instant.getNano())
+				.build();
 	}
 	// ==================== MachineStatus Mappings ====================
 

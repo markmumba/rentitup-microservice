@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Reminder</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #f59e0b; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+        .alert-box { background: #fef3c7; border: 1px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .machine-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .info-row { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+        .info-row:last-child { border-bottom: none; }
+        .label { color: #6b7280; font-size: 0.875em; }
+        .value { font-weight: 600; font-size: 1.1em; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 0.875em; }
+        .button { display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Maintenance Reminder</h1>
+    </div>
+    <div class="content">
+        <p>Hi <span th:text="${ownerName}">Owner</span>,</p>
+
+        <div class="alert-box">
+            <strong>Scheduled maintenance is due soon!</strong>
+            <p>Your equipment requires maintenance to ensure optimal performance and safety.</p>
+        </div>
+
+        <div class="machine-info">
+            <div class="info-row">
+                <div class="label">Equipment</div>
+                <div class="value" th:text="${machineName}">Excavator XL200</div>
+            </div>
+            <div class="info-row">
+                <div class="label">Last Service Date</div>
+                <div class="value" th:text="${lastServiceDate}">February 1, 2026</div>
+            </div>
+            <div class="info-row">
+                <div class="label">Next Service Due</div>
+                <div class="value" th:text="${nextServiceDate}">March 15, 2026</div>
+            </div>
+        </div>
+
+        <p>Regular maintenance helps:</p>
+        <ul>
+            <li>Extend equipment lifespan</li>
+            <li>Prevent unexpected breakdowns</li>
+            <li>Maintain safety standards</li>
+            <li>Keep your equipment in top rental condition</li>
+        </ul>
+
+        <center>
+            <a href="#" class="button">Schedule Maintenance</a>
+        </center>
+    </div>
+    <div class="footer">
+        <p>Keep your equipment running smoothly with <span th:text="${appName}">RentItUp</span></p>
+        <p>Questions? Contact us at <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}">support@rentitup.com</a></p>
+    </div>
+</body>
+</html>

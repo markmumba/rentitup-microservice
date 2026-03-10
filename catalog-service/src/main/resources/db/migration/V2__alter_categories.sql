@@ -1,0 +1,4 @@
+
+
+ALTER TABLE catalog.categories ADD COLUMN
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
