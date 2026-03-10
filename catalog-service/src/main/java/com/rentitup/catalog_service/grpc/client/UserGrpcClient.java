@@ -23,10 +23,10 @@ public class UserGrpcClient {
 					.setId(userId.toString())
 					.build();
 			UserResponse respone = client.getUser(request);
-			return respone == null;
+			return respone != null;
 		} catch (StatusRuntimeException e) {
 			log.warn("User not found {}: {}", userId, e.getStatus());
-			return true;
+			return false;
 		}
 	}
 

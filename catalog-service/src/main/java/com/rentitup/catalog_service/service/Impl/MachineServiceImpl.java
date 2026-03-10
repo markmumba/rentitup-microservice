@@ -216,7 +216,7 @@ public class MachineServiceImpl implements MachineService {
 
 	@Override
 	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId, int daysAhead, Pageable pageable) {
-		if (!userGrpcClient.userExists(ownerId)) {
+		if (userGrpcClient.userExists(ownerId)) {
 			throw new NotFoundException("Owner not found: " + ownerId);
 		}
 		LocalDate now = LocalDate.now();

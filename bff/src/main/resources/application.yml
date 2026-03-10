@@ -1,66 +1,15 @@
-server:
-  port: 8080
-  servlet:
-    session:
-      cookie:
-        http-only: true
-        secure: false  # Set to true in production with HTTPS
-        same-site: lax
-
 spring:
   application:
     name: bff
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}
-          jwk-set-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}/oauth2/jwks
-
-      client:
-        registration:
-          bff-gateway:
-            client-id: bff-gateway
-            client-secret: bff-gateway-secret
-            authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-            client-authentication-method: client_secret_basic
-            scope: openid,profile,email
-          bff-service:
-            client-id: bff-service
-            client-secret: bff-secret
-            authorization-grant-type: client_credentials
-        provider:
-          bff-gateway:
-            issuer-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}
-            authorization-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}/oauth2/authorize
-            token-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}/oauth2/token
-            user-info-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}/userinfo
-            jwk-set-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}/oauth2/jwks
-            user-name-attribute: sub
-          bff-service:
-            token-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}/oauth2/token
+  config:
+    import: "configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: CONFIG-SERVER
 
 eureka:
   client:
-    register-with-eureka: false
     service-url:
-      defaultZone: http://localhost:8081/eureka
-    fetch-registry: true
-
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
-
-app:
-  frontend-url: ${FRONTEND_URL:http://localhost:4200}
-
-grpc:
-  client:
-    oauth2-registration: bff-service  # Use bff-service registration for service tokens
-
+      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka/}

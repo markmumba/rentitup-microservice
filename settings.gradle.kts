@@ -18,6 +18,7 @@ include(
     "bff",
     "booking-service",
     "catalog-service",
+    "config-server",
     "cron-service",
     "notification-service",
     "service-registry",

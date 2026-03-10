@@ -1,7 +1,9 @@
 package com.rentitup.bff.controller.catalog;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
+import com.rentitup.bff.common.proto.ProtoJsonUtil;
 import com.rentitup.bff.common.response.ResponseBuilder;
+import com.rentitup.bff.common.security.SecurityUtils;
 import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.catalog.*;
 import com.rentitup.shared.proto.common.Location;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/machines")
@@ -31,9 +34,11 @@ public class MachineController {
 	@Operation(summary = "Create a new machine", description = "Creates a new machine listing")
 	@PostMapping
 	public ResponseEntity<?> createMachine(@Valid @RequestBody CreateMachineRequest request) {
-		log.info("REST: Create machine request: {}", request.getName());
+		String ownerId = SecurityUtils.getCurrentUserId();
+		log.info("REST: Create machine request: name={} categoryId={} ownerId={}", request.getName(), request.getCategoryId(), ownerId);
+
 		MachineResponse response = catalogServiceStub.createMachine(request);
-		return ResponseBuilder.created("Machine created successfully", response.getMachine());
+		return ResponseBuilder.created("Machine created successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Get machine by ID", description = "Retrieves a single machine with optional owner and reviews")
@@ -49,7 +54,7 @@ public class MachineController {
 				.setIncludeReviews(includeReviews)
 				.build();
 		MachineResponse response = catalogServiceStub.getMachine(request);
-		return ResponseBuilder.success("Machine retrieved successfully", response.getMachine());
+		return ResponseBuilder.success("Machine retrieved successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Update a machine", description = "Updates an existing machine")
@@ -75,7 +80,7 @@ public class MachineController {
 		if (request.hasIsAvailable()) builder.setIsAvailable(request.getIsAvailable());
 
 		MachineResponse response = catalogServiceStub.updateMachine(builder.build());
-		return ResponseBuilder.success("Machine updated successfully", response.getMachine());
+		return ResponseBuilder.success("Machine updated successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Delete a machine", description = "Soft deletes a machine")
@@ -192,7 +197,7 @@ public class MachineController {
 		if (categoryId != null) builder.setCategoryId(categoryId);
 
 		ListMachinesResponse response = catalogServiceStub.getFeaturedMachines(builder.build());
-		return ResponseBuilder.success("Featured machines retrieved", response.getMachinesList());
+		return ResponseBuilder.success("Featured machines retrieved", ProtoJsonUtil.toMapList(response.getMachinesList()));
 	}
 
 	@Operation(summary = "Get nearby machines", description = "Retrieves machines within a specified radius of a location")
@@ -237,7 +242,7 @@ public class MachineController {
 				.build();
 
 		GetUploadUrlResponse response = catalogServiceStub.getUploadUrl(request);
-		return ResponseBuilder.success("Upload URL generated", response);
+		return ResponseBuilder.success("Upload URL generated", ProtoJsonUtil.toMap(response));
 	}
 
 	@Operation(summary = "Add machine image", description = "Adds an image to a machine after uploading")
@@ -254,7 +259,7 @@ public class MachineController {
 				.build();
 
 		MachineResponse response = catalogServiceStub.addMachineImage(grpcRequest);
-		return ResponseBuilder.created("Image added successfully", response.getMachine());
+		return ResponseBuilder.created("Image added successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Remove machine image", description = "Removes an image from a machine")
@@ -270,7 +275,7 @@ public class MachineController {
 				.build();
 
 		MachineResponse response = catalogServiceStub.removeMachineImage(request);
-		return ResponseBuilder.success("Image removed successfully", response.getMachine());
+		return ResponseBuilder.success("Image removed successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	@Operation(summary = "Set primary image", description = "Sets an image as the primary image for a machine")
@@ -286,7 +291,7 @@ public class MachineController {
 				.build();
 
 		MachineResponse response = catalogServiceStub.setPrimaryImage(request);
-		return ResponseBuilder.success("Primary image set successfully", response.getMachine());
+		return ResponseBuilder.success("Primary image set successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
 	// ==================== Maintenance Records ====================
@@ -309,7 +314,7 @@ public class MachineController {
 		}
 
 		MaintenanceRecordResponse response = catalogServiceStub.addMaintenanceRecord(builder.build());
-		return ResponseBuilder.created("Maintenance record added", response.getRecord());
+		return ResponseBuilder.created("Maintenance record added", ProtoJsonUtil.toMap(response.getRecord()));
 	}
 
 	@Operation(summary = "Get maintenance history", description = "Retrieves maintenance history for a machine")
@@ -333,7 +338,7 @@ public class MachineController {
 				.build();
 
 		return ResponseBuilder.successPageResponse(
-				response.getRecordsList(),
+				ProtoJsonUtil.toMapList(response.getRecordsList()),
 				paginationDto,
 				response.getPagination().getTotalElements()
 		);
@@ -359,7 +364,7 @@ public class MachineController {
 				.build();
 
 		return ResponseBuilder.successPageResponse(
-				response.getRecordsList(),
+				ProtoJsonUtil.toMapList(response.getRecordsList()),
 				paginationDto,
 				response.getPagination().getTotalElements()
 		);
@@ -380,7 +385,7 @@ public class MachineController {
 				.limit(response.getPagination().getPageSize())
 				.build();
 
-		List<Machine> machines = response.getMachinesList();
+		List<Map<String, Object>> machines = ProtoJsonUtil.toMapList(response.getMachinesList());
 		return ResponseBuilder.successPageResponse(
 				machines,
 				paginationDto,

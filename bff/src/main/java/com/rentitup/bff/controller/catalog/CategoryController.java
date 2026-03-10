@@ -1,6 +1,7 @@
 package com.rentitup.bff.controller.catalog;
 
 import com.rentitup.bff.common.pagination.PaginationDto;
+import com.rentitup.bff.common.proto.ProtoJsonUtil;
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.common.grpc.client.GrpcClient;
 import com.rentitup.shared.proto.catalog.*;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/categories")
@@ -29,7 +31,7 @@ public class CategoryController {
 	public ResponseEntity<?> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
 		log.info("REST: Create category request: {}", request.getName());
 		CategoryResponse response = catalogServiceStub.createCategory(request);
-		return ResponseBuilder.created("Category created successfully", response.getResponse());
+		return ResponseBuilder.created("Category created successfully", ProtoJsonUtil.toMap(response.getResponse()));
 	}
 
 	@Operation(summary = "Get category by ID", description = "Retrieves a single category by its ID")
@@ -40,7 +42,7 @@ public class CategoryController {
 				.setId(id)
 				.build();
 		CategoryResponse response = catalogServiceStub.getCategory(request);
-		return ResponseBuilder.success("Category retrieved successfully", response.getResponse());
+		return ResponseBuilder.success("Category retrieved successfully", ProtoJsonUtil.toMap(response.getResponse()));
 	}
 
 	@Operation(summary = "List all categories", description = "Retrieves a paginated list of categories")
@@ -68,7 +70,7 @@ public class CategoryController {
 				.limit(response.getPagination().getPageSize())
 				.build();
 
-		List<Category> categories = response.getCategoriesList();
+		List<Map<String, Object>> categories = ProtoJsonUtil.toMapList(response.getCategoriesList());
 		return ResponseBuilder.successPageResponse(
 				categories,
 				paginationDto,
@@ -100,7 +102,7 @@ public class CategoryController {
 		}
 
 		CategoryResponse response = catalogServiceStub.updateCategory(builder.build());
-		return ResponseBuilder.success("Category updated successfully", response.getResponse());
+		return ResponseBuilder.success("Category updated successfully", ProtoJsonUtil.toMap(response.getResponse()));
 	}
 
 	@Operation(summary = "Delete a category", description = "Deletes a category by its ID")

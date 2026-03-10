@@ -44,11 +44,11 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public Page<CategoryEntity> getCategories(Pageable pageable, boolean includeEmpty) {
 		log.info("Retrieving categories including empty={}", includeEmpty);
-		if (includeEmpty) {
+		if (!includeEmpty) {
 			return categoryRepository.findAllWithMachines(pageable);
 		}
-		return categoryRepository.findAll(pageable);
-
+		Page<CategoryEntity> categories=  categoryRepository.findAll(pageable);
+		return categories;
 	}
 
 

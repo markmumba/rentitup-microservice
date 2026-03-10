@@ -12,11 +12,11 @@ import org.springframework.data.domain.Sort;
 public final class PaginationHelper {
 
 	public static Pageable toPageable(PaginationRequest request) {
-		int page = Math.max(0,request.getPage());
+		int page = Math.max(0,request.getPage())-1;
 		int size = request.getSize() > 0 ? request.getSize() : 20;
 
 		String sortBy = request.getSortBy();
-		if (sortBy != null || sortBy.isBlank()) {
+		if (sortBy == null || sortBy.isBlank()) {
 			sortBy = "createdAt";
 		}
 
@@ -29,7 +29,7 @@ public final class PaginationHelper {
 
 	public static PaginationResponse toProto(Page<?> page) {
 		return PaginationResponse.newBuilder()
-				.setCurrentPage(page.getNumber())
+				.setCurrentPage(page.getNumber()+1)
 				.setTotalPages(page.getTotalPages())
 				.setTotalElements(page.getTotalElements())
 				.setPageSize(page.getSize())

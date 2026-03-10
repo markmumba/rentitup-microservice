@@ -1,5 +1,5 @@
 plugins {
-	id("buildlogic.microservice-conventions")
+	id("buildlogic.cloud-service-conventions")
 }
 
 group = "com.rentitup"

@@ -1,41 +1,15 @@
-server:
-  port: 8086
-
 spring:
   application:
     name: cron-service
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${AUTH_SERVER_URL:http://localhost:9000}
-          jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/jwks
-      client:
-        registration:
-          auth-server:
-            client-id: cron-service
-            client-secret: cron-secret
-            authorization-grant-type: client_credentials
-        provider:
-          auth-server:
-            token-uri: ${AUTH_SERVER_URL:http://localhost:9000}/oauth2/token
+  config:
+    import: "configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: CONFIG-SERVER
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka}
-    fetch-registry: true
-    register-with-eureka: true
-  instance:
-    prefer-ip-address: true
-
-logging:
-  level:
-    com.rentitup: DEBUG
-    org.springframework.scheduling: DEBUG
-
-# Cron job schedules (override in production if needed)
-cron:
-  update-ratings: "0 0 2 * * *"          # Daily at 2 AM
-  maintenance-reminder: "0 0 8 * * *"    # Daily at 8 AM
+      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka/}

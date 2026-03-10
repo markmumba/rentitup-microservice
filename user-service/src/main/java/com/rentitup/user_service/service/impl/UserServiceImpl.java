@@ -39,15 +39,18 @@ public class UserServiceImpl implements UserService {
 		if (user.getPassword() != null) {
 			user.setPassword(passwordEncoder.encode(user.getPassword()));
 		}
-
+		if(user.getRole() == ERole.ADMIN || user.getRole() == ERole.CUSTOMER) {
+			user.setKycStatus(KycStatus.VERIFIED);
+		}
 		return userRepository.save(user);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public UserEntity getUserById(UUID id) {
-		return userRepository.findById(id)
+		UserEntity user=  userRepository.findById(id)
 				.orElseThrow(() -> new NotFoundException("User not found: " + id));
+		return user;
 	}
 
 	@Override

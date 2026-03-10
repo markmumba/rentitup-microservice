@@ -27,8 +27,7 @@ import java.util.UUID;
 )
 public interface CatalogMapper {
 
-	@Mapping(target = "id", expression = "java(entity.getId().toString())")
-	@Mapping(target = "machineCount", expression = "java(entity.getMachineCount())")
+	@Mapping(target = "machineCount", source = "machineCount")
 	@Mapping(target = "mergeFrom", ignore = true)
 	@Mapping(target = "clearField", ignore = true)
 	@Mapping(target = "clearOneof", ignore = true)

@@ -4,28 +4,15 @@ server:
 spring:
   application:
     name: auth-server
-
-  datasource:
-    url: jdbc:h2:mem:authdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+  config:
+    import: "configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: CONFIG-SERVER
 
 eureka:
   client:
-    fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka}
-  instance:
-    prefer-ip-address: true
-    metadata-map:
-      auth-issuer-uri: ${AUTH_SERVER_EXTERNAL_URL:http://localhost:9000}
-
-auth:
-  external-url: ${AUTH_SERVER_EXTERNAL_URL:http://127.0.0.1:9000}
-  redirect-uri: ${BFF_EXTERNAL_URL:http://localhost:8080}/login/oauth2/code/bff-gateway
+      defaultZone: ${EUREKA_URL:http://localhost:8081/eureka/}

@@ -32,11 +32,6 @@ public class AuthController {
 	@GrpcClient("USER-SERVICE")
 	private  UserServiceGrpc.UserServiceBlockingStub userServiceStub;
 
-	/**
-	 * Initiates OAuth2 login flow.
-	 * Frontend should redirect user to this endpoint to start login.
-	 * Spring Security will handle the redirect to the auth server.
-	 */
 	@GetMapping("/login")
 	@Operation(summary = "Initiate login", description = "Redirects to OAuth2 authorization server for login")
 	public ResponseEntity<Void> login() {
@@ -46,11 +41,6 @@ public class AuthController {
 				.build();
 	}
 
-	/**
-	 * Get current authenticated user info from session.
-	 * This endpoint is used by the frontend to check if user is logged in
-	 * and get user details without exposing the JWT.
-	 */
 	@GetMapping("/me")
 	@Operation(summary = "Get current user", description = "Returns the currently authenticated user's information")
 	public ResponseEntity<?> getCurrentUser(
@@ -67,7 +57,6 @@ public class AuthController {
 		userInfo.put("id", principal.getName());
 		userInfo.put("authenticated", true);
 
-		// Extract claims from the OAuth2 user
 		Map<String, Object> attributes = principal.getAttributes();
 		if (attributes.containsKey("email")) {
 			userInfo.put("email", attributes.get("email"));
@@ -79,7 +68,6 @@ public class AuthController {
 			userInfo.put("roles", attributes.get("roles"));
 		}
 
-		// If it's an OIDC user, we can get more info
 		if (principal instanceof OidcUser oidcUser) {
 			if (oidcUser.getEmail() != null) {
 				userInfo.put("email", oidcUser.getEmail());
@@ -89,7 +77,6 @@ public class AuthController {
 			}
 		}
 
-		// Include token expiry info (useful for frontend to know when to refresh)
 		if (authorizedClient != null && authorizedClient.getAccessToken() != null) {
 			var expiresAt = authorizedClient.getAccessToken().getExpiresAt();
 			if (expiresAt != null) {
@@ -100,10 +87,7 @@ public class AuthController {
 		return ResponseBuilder.success("User info retrieved", userInfo);
 	}
 
-	/**
-	 * Check authentication status without full user info.
-	 * Lightweight endpoint for quick auth checks.
-	 */
+
 	@GetMapping("/status")
 	@Operation(summary = "Check auth status", description = "Returns whether the user is authenticated")
 	public ResponseEntity<?> getAuthStatus(@AuthenticationPrincipal OAuth2User principal) {
@@ -135,11 +119,13 @@ public class AuthController {
 		log.info("REST: Check email exists: {}", email);
 
 		try {
-			userServiceStub.getUserByEmail(
+			UserResponse user = userServiceStub.getUserByEmail(
 					GetUserByEmailRequest.newBuilder()
 							.setEmail(email)
-							.build()
-			);
+							.build());
+
+			log.info("REST: User found: {}", user.getUser().getFullName());
+
 			return ResponseBuilder.success("Email check completed",
 					new EmailCheckResponse(true, "Email is already registered"));
 		} catch (Exception e) {

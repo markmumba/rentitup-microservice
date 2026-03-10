@@ -55,6 +55,9 @@ public class AuthorizationServerConfig {
 	@Value("${auth.external-url}")
 	private String externalUrl;
 
+	@Value("${auth.frontend-url}")
+	private String frontendUrl;
+
 	/**
 	 * For later reading and understanding :
 	 * This security filter chain handles all the OAuth2/OIDC protocol endpoints.
@@ -128,6 +131,7 @@ public class AuthorizationServerConfig {
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
 				.redirectUri(redirectUri)
+				.postLogoutRedirectUri(frontendUrl)
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
 				.scope(OidcScopes.EMAIL)

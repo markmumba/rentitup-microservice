@@ -27,7 +27,7 @@ public class MachineEntity extends BaseEntity {
 	@Column(name = "owner_id", nullable = false)
 	private UUID ownerId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "category_id", nullable = false)
 	private CategoryEntity category;
 

@@ -1,6 +1,6 @@
 
 plugins {
-	id("buildlogic.spring-boot-conventions")
+	id("buildlogic.cloud-service-conventions")
 }
 
 group = "com.example"

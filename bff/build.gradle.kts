@@ -1,5 +1,5 @@
 plugins {
-	id("buildlogic.spring-boot-conventions")
+	id("buildlogic.cloud-service-conventions")
 }
 
 group = "com.rentitup"
@@ -10,7 +10,6 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-	implementation("org.springframework.session:spring-session-core")
 	implementation(project(":shared-libs"))
 	implementation(project(":common"))
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")

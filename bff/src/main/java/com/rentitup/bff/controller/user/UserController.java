@@ -11,7 +11,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +32,33 @@ public class UserController {
 	@Operation(summary = "Get current user profile", description = "Returns the profile of the authenticated user")
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser() {
-		String userId = getCurrentUserId();
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
+		// For OAuth2 session auth, look up by email (sub claim)
+		if (auth instanceof OAuth2AuthenticationToken oauthAuth) {
+			String email = oauthAuth.getPrincipal().getName();
+			log.info("REST: Get current user by email: {}", email);
+
+			// Try user_id from token attributes first
+			Object userId = oauthAuth.getPrincipal().getAttribute("user_id");
+			if (userId != null) {
+				GetUserRequest request = GetUserRequest.newBuilder()
+						.setId(userId.toString())
+						.build();
+				UserResponse response = userServiceStub.getUser(request);
+				return ResponseBuilder.success("User retrieved", response.getUser());
+			}
+
+			// Fall back to email lookup
+			GetUserByEmailRequest request = GetUserByEmailRequest.newBuilder()
+					.setEmail(email)
+					.build();
+			UserResponse response = userServiceStub.getUserByEmail(request);
+			return ResponseBuilder.success("User retrieved", response.getUser());
+		}
+
+		// For JWT auth (resource server)
+		String userId = getCurrentUserId();
 		log.info("REST: Get current user: {}", userId);
 		GetUserRequest request = GetUserRequest.newBuilder()
 				.setId(userId)
@@ -118,9 +147,21 @@ public class UserController {
 	}
 
 	private String getCurrentUserId() {
-		JwtAuthenticationToken auth = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-		assert auth != null;
-		Jwt jwt = auth.getToken();
-		return jwt.getClaimAsString("user_id");
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+		if (auth instanceof JwtAuthenticationToken jwtAuth) {
+			Jwt jwt = jwtAuth.getToken();
+			return jwt.getClaimAsString("user_id");
+		}
+
+		if (auth instanceof OAuth2AuthenticationToken oauthAuth) {
+			OAuth2User principal = oauthAuth.getPrincipal();
+			if (principal.getAttribute("user_id") != null) {
+				return principal.getAttribute("user_id");
+			}
+			return principal.getName();
+		}
+
+		throw new IllegalStateException("Unsupported authentication type: " + auth.getClass().getName());
 	}
 }

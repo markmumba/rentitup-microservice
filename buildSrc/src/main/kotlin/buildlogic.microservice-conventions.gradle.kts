@@ -1,10 +1,11 @@
 /*
- * Convention plugin for Spring Boot microservices with database.
- * Extends spring-boot-conventions with: Database (JPA, Flyway, PostgreSQL)
+ * Convention plugin for Spring Boot microservices with a PostgreSQL database.
+ * Extends cloud-service-conventions with: JPA, Flyway, PostgreSQL.
+ * Use this for: user-service, booking-service, catalog-service.
  */
 
 plugins {
-    id("buildlogic.spring-boot-conventions")
+    id("buildlogic.cloud-service-conventions")
 }
 
 dependencies {

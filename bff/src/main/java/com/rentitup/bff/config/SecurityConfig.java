@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,8 +17,10 @@ import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInit
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -53,6 +56,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/v1/reviews/owner/**").permitAll()
 						.anyRequest().authenticated()
 				)
+				// Return 401 for XHR/API requests instead of redirecting to OAuth
+				.exceptionHandling(exceptions -> exceptions
+						.authenticationEntryPoint(authenticationEntryPoint())
+				)
 				// OAuth2 Login (for browser-based login with sessions)
 				.oauth2Login(oauth2 -> oauth2
 						.successHandler(oauth2AuthenticationSuccessHandler())
@@ -86,11 +93,43 @@ public class SecurityConfig {
 		};
 	}
 
+	/**
+	 * Returns 401 for API requests (Accept contains application/json).
+	 * Redirects to OAuth2 login for browser navigation requests.
+	 */
+	private AuthenticationEntryPoint authenticationEntryPoint() {
+		AuthenticationEntryPoint apiEntryPoint = (request, response, authException) -> {
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+			response.getWriter().write("{\"success\":false,\"message\":\"Not authenticated\"}");
+		};
+
+		AuthenticationEntryPoint browserEntryPoint =
+				new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/bff-gateway");
+
+		return (request, response, authException) -> {
+			String accept = request.getHeader("Accept");
+			if (accept != null && accept.contains("application/json")) {
+				apiEntryPoint.commence(request, response, authException);
+			} else {
+				browserEntryPoint.commence(request, response, authException);
+			}
+		};
+	}
+
 	private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
-		OidcClientInitiatedLogoutSuccessHandler handler =
+		OidcClientInitiatedLogoutSuccessHandler oidcHandler =
 				new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-		handler.setPostLogoutRedirectUri(frontendUrl);
-		return handler;
+		oidcHandler.setPostLogoutRedirectUri(frontendUrl);
+
+		// Fallback: if OIDC logout fails, just redirect to frontend
+		return (request, response, authentication) -> {
+			try {
+				oidcHandler.onLogoutSuccess(request, response, authentication);
+			} catch (Exception e) {
+				response.sendRedirect(frontendUrl);
+			}
+		};
 	}
 
 	@Bean

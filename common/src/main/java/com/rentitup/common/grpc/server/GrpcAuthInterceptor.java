@@ -58,6 +58,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 			String token = authHeader.substring(7);
 			String tokenPreview = token.length() > 20 ? token.substring(0, 20) + "..." : token;
 			log.info("[gRPC-SERVER] Token received: {}", tokenPreview);
+			log.info("[gRPC-SERVER] Token received : {}", token);
 
 			try {
 				Jwt jwt = jwtDecoder.decode(token);
