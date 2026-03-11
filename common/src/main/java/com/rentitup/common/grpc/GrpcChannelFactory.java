@@ -19,18 +19,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class GrpcChannelFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(GrpcChannelFactory.class);
-	private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
-	private static final String EUREKA_DNS = "eureka:///";
+	private static final String EUREKA_SCHEME = "eureka:///";
+	private static final String XDS_SCHEME    = "xds:///";
 
+	private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
 	private final EurekaClient eurekaClient;
 	private final ObjectProvider<ClientInterceptor> interceptorProvider;
+	private final boolean xdsEnabled;
 	private final AtomicBoolean nameResolverRegistered = new AtomicBoolean(false);
 	private volatile List<ClientInterceptor> resolvedInterceptors;
 
-	public GrpcChannelFactory(EurekaClient eurekaClient, ObjectProvider<ClientInterceptor> interceptorProvider) {
-		this.eurekaClient = eurekaClient;
+	public GrpcChannelFactory(EurekaClient eurekaClient,
+	                          ObjectProvider<ClientInterceptor> interceptorProvider,
+	                          boolean xdsEnabled) {
+		this.eurekaClient        = eurekaClient;
 		this.interceptorProvider = interceptorProvider;
-		log.info("GrpcChannelFactory initialized");
+		this.xdsEnabled          = xdsEnabled;
+		log.info("GrpcChannelFactory initialized  resolver={}", xdsEnabled ? "xds" : "eureka");
 	}
 
 	private List<ClientInterceptor> getInterceptors() {
@@ -38,7 +43,7 @@ public class GrpcChannelFactory {
 			synchronized (this) {
 				if (resolvedInterceptors == null) {
 					resolvedInterceptors = interceptorProvider.orderedStream().toList();
-					log.info("Resolved {} client interceptors for gRPC channels", resolvedInterceptors.size());
+					log.info("Resolved {} gRPC client interceptors", resolvedInterceptors.size());
 				}
 			}
 		}
@@ -46,24 +51,31 @@ public class GrpcChannelFactory {
 	}
 
 	public ManagedChannel getChannel(String serviceName) {
-		ensureNameResolverRegistered();
+		if (!xdsEnabled) {
+			ensureEurekaResolverRegistered();
+		}
 		return channels.computeIfAbsent(serviceName, this::createChannel);
 	}
 
-	private void ensureNameResolverRegistered() {
+	private void ensureEurekaResolverRegistered() {
 		if (nameResolverRegistered.compareAndSet(false, true)) {
-			log.info("Registering Eureka NameResolverProvider with gRPC");
+			log.info("Registering EurekaNameResolverProvider");
 			NameResolverRegistry.getDefaultRegistry()
 					.register(new EurekaNameResolverProvider(eurekaClient));
 		}
 	}
 
-	public ManagedChannel createChannel(String serviceName) {
+	private ManagedChannel createChannel(String serviceName) {
 		List<ClientInterceptor> interceptors = getInterceptors();
-		log.debug("Creating gRPC channel for service: {} with {} interceptors", serviceName, interceptors.size());
+		String target = xdsEnabled
+				? XDS_SCHEME + serviceName.toLowerCase()
+				: EUREKA_SCHEME + serviceName;
+
+		log.debug("Creating gRPC channel  target={}  interceptors={}", target, interceptors.size());
+
 		ManagedChannelBuilder<?> builder = ManagedChannelBuilder
-				.forTarget(EUREKA_DNS + serviceName)
-				.defaultLoadBalancingPolicy("round_robin")
+				.forTarget(target)
+				.defaultLoadBalancingPolicy(xdsEnabled ? "xds_wrr_locality" : "round_robin")
 				.usePlaintext();
 
 		if (!interceptors.isEmpty()) {
@@ -74,19 +86,19 @@ public class GrpcChannelFactory {
 	}
 
 	public void refreshChannel(String serviceName) {
-		ManagedChannel oldChannel = channels.remove(serviceName);
-		if (oldChannel != null) {
-			oldChannel.shutdown();
+		ManagedChannel old = channels.remove(serviceName);
+		if (old != null) {
+			old.shutdown();
 		}
 	}
 
 	@PreDestroy
 	public void shutdown() {
-		channels.values().forEach(channel -> {
+		channels.values().forEach(ch -> {
 			try {
-				channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+				ch.shutdown().awaitTermination(5, TimeUnit.SECONDS);
 			} catch (Exception e) {
-				channel.shutdownNow();
+				ch.shutdownNow();
 			}
 		});
 	}

@@ -15,4 +15,7 @@ dependencies {
 
     // Config Client — fetches config from config-server via Eureka (discovery-first)
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+
+    // xDS support — enables xds:/// channel scheme for proxyless gRPC service mesh
+    implementation("io.grpc:grpc-xds")
 }
