@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
+
 
 @Entity
 @Table(name = "maintenance_records", schema = "catalog")

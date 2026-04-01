@@ -103,7 +103,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.defaultPriceType(request.hasDefaultPriceType()
 							? catalogMapper.map(request.getDefaultPriceType())
 							: null)
-					.build();
+					.machineCount(3).build();
 			CategoryEntity updated = categoryService.updateCategory(id, updates);
 			CategoryResponse response = CategoryResponse.newBuilder()
 					.setResponse(catalogMapper.toProto(updated))

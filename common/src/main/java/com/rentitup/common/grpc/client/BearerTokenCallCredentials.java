@@ -1,15 +1,15 @@
 package com.rentitup.common.grpc.client;
 
-import com.rentitup.common.grpc.server.GrpcAuthContext;
-import com.rentitup.common.security.SecurityUtils;
-import io.grpc.CallCredentials;
-import io.grpc.Context;
-import io.grpc.Metadata;
-import io.grpc.Status;
+// import com.rentitup.common.grpc.server.GrpcAuthContext;
+// import com.rentitup.common.security.SecurityUtils;
+// import io.grpc.CallCredentials;
+// import io.grpc.Context;
+// import io.grpc.Metadata;
+// import io.grpc.Status;
 
-import java.util.concurrent.Executor;
+// import java.util.concurrent.Executor;
 
-import static com.rentitup.common.grpc.server.GrpcAuthContext.TOKEN;
+// import static com.rentitup.common.grpc.server.GrpcAuthContext.TOKEN;
 
 //@Deprecated
 //public class BearerTokenCallCredentials extends CallCredentials {

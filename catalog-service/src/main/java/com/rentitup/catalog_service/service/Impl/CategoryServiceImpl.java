@@ -3,6 +3,7 @@ package com.rentitup.catalog_service.service.Impl;
 import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.service.CategoryService;
+import com.rentitup.catalog_service.shared.CacheService;
 import com.rentitup.common.exceptions.ConflictException;
 import com.rentitup.common.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class CategoryServiceImpl implements CategoryService {
 
 	private final CategoryRepository categoryRepository;
+	private final CacheService cacheService;
 
 	@Override
 	public CategoryEntity createCategory(CategoryEntity category) {
@@ -28,6 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
 		}
 
 		CategoryEntity saved = categoryRepository.save(category);
+		cacheService.putCategory(saved);
 		log.info("Created category id={} name={}", saved.getId(), saved.getName());
 		return saved;
 	}
@@ -35,10 +38,17 @@ public class CategoryServiceImpl implements CategoryService {
 	@Override
 	public CategoryEntity getCategoryById(UUID id) {
 		log.info("Retrieving category id={}", id);
-		return categoryRepository.findById(id).orElseThrow(
+		Optional<CategoryEntity> cached= cacheService.getCategory(id);
+		if(cached.isPresent()) {
+		    log.info("Cache hit for category id={}", id);
+			return cached.get();
+		}
+		log.info("Cache miss for category id={}",id);
+		CategoryEntity category =categoryRepository.findById(id).orElseThrow(
 				() -> new NotFoundException("Category not found: " + id)
 		);
-
+		cacheService.putCategory(category);
+		return category;
 	}
 
 	@Override
@@ -47,8 +57,8 @@ public class CategoryServiceImpl implements CategoryService {
 		if (!includeEmpty) {
 			return categoryRepository.findAllWithMachines(pageable);
 		}
-		Page<CategoryEntity> categories=  categoryRepository.findAll(pageable);
-		return categories;
+		return categoryRepository.findAll(pageable);
+
 	}
 
 
@@ -71,8 +81,11 @@ public class CategoryServiceImpl implements CategoryService {
 		if (updates.getDefaultPriceType() != null) {
 			existing.setDefaultPriceType(updates.getDefaultPriceType());
 		}
-		return  categoryRepository.save(existing);
+		CategoryEntity savedCategory = categoryRepository.save(existing);
+		cacheService.putCategory(savedCategory);
+		return savedCategory;
 	}
+	
 
 	@Override
 	public void deleteCategoryById(UUID id) {
@@ -81,5 +94,6 @@ public class CategoryServiceImpl implements CategoryService {
 				() -> new NotFoundException("Category not found: " + id)
 		);
 		categoryRepository.delete(saved);
+		cacheService.evictCategory(id);
 	}
 }

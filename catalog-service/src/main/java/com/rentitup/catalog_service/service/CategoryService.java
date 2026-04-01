@@ -1,11 +1,9 @@
 package com.rentitup.catalog_service.service;
 
 import com.rentitup.catalog_service.entities.CategoryEntity;
-import com.rentitup.shared.proto.catalog.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface CategoryService {

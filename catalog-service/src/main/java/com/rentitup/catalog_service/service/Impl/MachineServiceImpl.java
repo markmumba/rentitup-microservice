@@ -10,6 +10,7 @@ import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
 import com.rentitup.catalog_service.service.MachineService;
+import com.rentitup.catalog_service.shared.CacheService;
 import com.rentitup.common.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ public class MachineServiceImpl implements MachineService {
 	private final MachineRepository machineRepository;
 	private final MaintenanceRecordRepository maintenanceRecordRepository;
 	private final UserGrpcClient userGrpcClient;
+	private final CacheService cacheService;
 
 
 
@@ -53,15 +56,25 @@ public class MachineServiceImpl implements MachineService {
 		}
 
 		machine.setCategory(category);
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		return saved;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public MachineEntity getMachine(UUID id) {
-		return machineRepository.findById(id).orElseThrow(
+		Optional<MachineEntity> cached = cacheService.getMachineEntity(id);
+		if (cached.isPresent()) {
+			log.info("Cache hit for machine id={}", id);
+			return cached.get();
+		}
+		log.info("Cache miss for machine id={}", id);
+		MachineEntity machine = machineRepository.findById(id).orElseThrow(
 				() -> new NotFoundException("Machine not found: " + id)
 		);
+		cacheService.putMachine(machine);
+		return machine;
 	}
 
 	@Override
@@ -108,7 +121,9 @@ public class MachineServiceImpl implements MachineService {
 			existing.setCategory(category);
 		}
 
-		return machineRepository.save(existing);
+		MachineEntity saved = machineRepository.save(existing);
+		cacheService.putMachine(saved);
+		return saved;
 	}
 
 	@Override
@@ -117,6 +132,8 @@ public class MachineServiceImpl implements MachineService {
 		MachineEntity machine = getMachine(id);
 		machine.setDeleted(true);
 		machineRepository.save(machine);
+		cacheService.evictMachine(id);
+		cacheService.evictMachineImages(id);
 		return "Machine deleted successfully";
 	}
 
@@ -127,6 +144,7 @@ public class MachineServiceImpl implements MachineService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<MachineEntity> findFeaturedMachines(Specification<MachineEntity> spec, Pageable pageable) {
 		return machineRepository.findAll(spec, pageable);
 	}
@@ -158,7 +176,10 @@ public class MachineServiceImpl implements MachineService {
 			.build();
 
 		machine.addImage(image);
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		cacheService.putMachineImages(machineId, saved.getImages());
+		return saved;
 	}
 
 	@Override
@@ -178,7 +199,10 @@ public class MachineServiceImpl implements MachineService {
 			machine.getImages().get(0).setPrimary(true);
 		}
 
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		cacheService.putMachineImages(machineId, saved.getImages());
+		return saved;
 	}
 
 	@Override
@@ -194,27 +218,33 @@ public class MachineServiceImpl implements MachineService {
 		machine.getImages().forEach(img -> img.setPrimary(false));
 		newPrimary.setPrimary(true);
 
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		cacheService.putMachineImages(machineId, saved.getImages());
+		return saved;
 	}
 
 	@Override
+	@Transactional
 	public MaintenanceRecordEntity createMaintenanceRecord(MaintenanceRecordEntity maintenanceRecord,UUID machineId) {
 		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
 				() -> new NotFoundException("Machine not found: " + machineId)
 		);
 		maintenanceRecord.setMachine(machine);
-		return maintenanceRecordRepository.save(maintenanceRecord);
+		MaintenanceRecordEntity saved = maintenanceRecordRepository.save(maintenanceRecord);
+		cacheService.putMaintenanceRecord(machineId, saved);
+		return saved;
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<MaintenanceRecordEntity> getMaintenanceHistory(UUID machineId, Pageable pageable) {
-		MachineEntity machine = machineRepository.findById(machineId).orElseThrow(
-				() -> new NotFoundException("Machine not found: " + machineId)
-		);
-		return maintenanceRecordRepository.findAllByMachine(machine,pageable);
+		MachineEntity machine = getMachine(machineId);
+		return maintenanceRecordRepository.findAllByMachine(machine, pageable);
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId, int daysAhead, Pageable pageable) {
 		if (userGrpcClient.userExists(ownerId)) {
 			throw new NotFoundException("Owner not found: " + ownerId);
@@ -225,6 +255,7 @@ public class MachineServiceImpl implements MachineService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<UUID> getMachineIdsByOwner(UUID ownerId) {
 		return machineRepository.findAllByOwnerId(ownerId).stream()
 				.map(MachineEntity::getId)
@@ -267,7 +298,9 @@ public class MachineServiceImpl implements MachineService {
 			machine.setAvailable(false);
 		}
 
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		return saved;
 	}
 
 	@Override
@@ -283,7 +316,9 @@ public class MachineServiceImpl implements MachineService {
 		MachineEntity machine = getMachine(machineId);
 		machine.setAverageRating(newAverageRating);
 		machine.setTotalReviews(totalReviews);
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		return saved;
 	}
 
 	@Override
@@ -291,7 +326,9 @@ public class MachineServiceImpl implements MachineService {
 	public MachineEntity incrementTotalRentals(UUID machineId) {
 		MachineEntity machine = getMachine(machineId);
 		machine.setTotalRentals(machine.getTotalRentals() + 1);
-		return machineRepository.save(machine);
+		MachineEntity saved = machineRepository.save(machine);
+		cacheService.putMachine(saved);
+		return saved;
 	}
 
 	@Override

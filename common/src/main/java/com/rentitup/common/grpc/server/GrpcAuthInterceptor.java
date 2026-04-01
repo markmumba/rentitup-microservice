@@ -1,7 +1,6 @@
 package com.rentitup.common.grpc.server;
 
 import io.grpc.*;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.jwt.Jwt;

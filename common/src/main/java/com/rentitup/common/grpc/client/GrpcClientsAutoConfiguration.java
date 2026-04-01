@@ -4,11 +4,9 @@ import com.rentitup.common.grpc.GrpcAutoConfiguration;
 import com.rentitup.common.grpc.GrpcChannelFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
-import org.springframework.grpc.client.GlobalClientInterceptor;
 
 
 @AutoConfiguration(
