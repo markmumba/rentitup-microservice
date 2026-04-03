@@ -1,5 +1,6 @@
 package com.rentitup.catalog_service.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rentitup.catalog_service.common.entites.BaseEntity;
 import com.rentitup.catalog_service.enums.MachineCondition;
 import com.rentitup.catalog_service.enums.MachineStatus;

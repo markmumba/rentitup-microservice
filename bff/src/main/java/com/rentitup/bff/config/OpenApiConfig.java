@@ -5,11 +5,13 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 public class OpenApiConfig {
@@ -35,5 +37,32 @@ public class OpenApiConfig {
 								.url("http://localhost:" + serverPort)
 								.description("Local Development Server")
 				));
+	}
+
+	@Bean
+	public OpenApiCustomizer protoOpenApiCustomizer() {
+		return openApi -> {
+			if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
+				openApi.getComponents().getSchemas().values().forEach(schema -> {
+					if (schema.getProperties() != null) {
+						@SuppressWarnings("unchecked")
+						List<String> protoFields = ((Set<String>) schema.getProperties().keySet()).stream()
+								.filter(key -> key.endsWith("Bytes")
+										|| key.endsWith("OrBuilder")
+										|| key.equals("unknownFields")
+										|| key.equals("defaultInstanceForType")
+										|| key.equals("parserForType")
+										|| key.equals("serializedSize")
+										|| key.equals("initialized")
+										|| key.equals("allFields")
+										|| key.equals("descriptorForType")
+										|| key.equals("initializationErrorString")
+										|| key.equals("memoizedSerializedSize"))
+								.toList();
+						protoFields.forEach(schema.getProperties()::remove);
+					}
+				});
+			}
+		};
 	}
 }

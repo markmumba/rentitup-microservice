@@ -9,6 +9,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
+import software.amazon.awssdk.services.s3.S3Configuration;
+
 import java.net.URI;
 
 @Configuration
@@ -29,12 +31,17 @@ public class StorageConfig {
 
 	@Bean
 	public S3Presigner s3Presigner(StorageProperties properties) {
+		S3Configuration serviceConfiguration = S3Configuration.builder()
+			.pathStyleAccessEnabled(true) // Required for MinIO
+			.build();
+
 		return S3Presigner.builder()
 			.endpointOverride(URI.create(properties.endpoint()))
 			.region(Region.of(properties.region()))
 			.credentialsProvider(StaticCredentialsProvider.create(
 				AwsBasicCredentials.create(properties.accessKey(), properties.secretKey())
 			))
+			.serviceConfiguration(serviceConfiguration)
 			.build();
 	}
 }

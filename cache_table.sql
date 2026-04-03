@@ -39,9 +39,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CALL expire_data('category_cache','60 minutes');
-CALL expire_data('machine_cache','60 minutes');
-CALL expire_data('machine_images_cache','60 minutes');
+CALL expire_cache('category_cache','60 minutes');
+CALL expire_cache('machine_cache','60 minutes');
+CALL expire_cache('machine_images_cache','60 minutes');
 
 /*
 Then schedule it with pg_cron if you have it, or call it from your Spring app with a @Scheduled method.

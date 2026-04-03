@@ -8,7 +8,6 @@ spring:
       discovery:
         enabled: true
         service-id: CONFIG-SERVER
-
 eureka:
   client:
     service-url:

@@ -2,6 +2,7 @@ package com.rentitup.catalog_service.entities;
 
 import com.rentitup.catalog_service.common.entites.BaseEntity;
 import com.rentitup.catalog_service.enums.PriceCalculationType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -33,9 +34,10 @@ public class CategoryEntity extends BaseEntity {
 
 	@OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
 	@Builder.Default
+	@JsonIgnore
 	private List<MachineEntity> machines = new ArrayList<>();
 
-	@Formula("(SELECT COUNT(*) FROM machines m WHERE m.category_id = id)")
+	@Formula("(SELECT COUNT(*) FROM catalog.machines m WHERE m.category_id = id)")
 	private int machineCount;
 
 }

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rentitup.catalog_service.entities.MachineImageEntity;
 import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,7 +15,7 @@ import com.rentitup.catalog_service.entities.CategoryEntity;
 import com.rentitup.catalog_service.entities.MachineEntity;
 
 import lombok.extern.slf4j.Slf4j;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 @Service
@@ -36,8 +35,10 @@ public class CacheService {
 			String result = cacheJdbcTemplate.queryForObject(
 					"SELECT value FROM category_cache WHERE id = ?::uuid", String.class, key
 			);
+			log.debug("Category cache hit for {}", key);
 			return Optional.of(objectMapper.readValue(result, CategoryEntity.class));
 		} catch (EmptyResultDataAccessException ex) {
+			log.debug("Category cache miss for {}", key);
 			return Optional.empty();
 		} catch (Exception ex) {
 			throw new RuntimeException("failed to deserialize object", ex);
@@ -46,10 +47,9 @@ public class CacheService {
 
 
 	public void putCategory(CategoryEntity category) {
-
 		try {
 			String json = objectMapper.writeValueAsString(category);
-			cacheJdbcTemplate.update(
+			int affectedRows = cacheJdbcTemplate.update(
 					"""
 							INSERT INTO category_cache (id,value,inserted_at)
 							VALUES (?::uuid ,?::jsonb, NOW())
@@ -58,16 +58,17 @@ public class CacheService {
 							""",
 					category.getId(), json
 			);
+			log.debug("Category cache put for {}: {} rows affected", category.getId(), affectedRows);
 		} catch (Exception ex) {
 			throw new RuntimeException("failed to serialize object", ex);
 		}
-
 	}
 
 	public void evictCategory(UUID key) {
-		cacheJdbcTemplate.update(
+		int affectedRow = cacheJdbcTemplate.update(
 				"DELETE FROM category_cache WHERE id=?::uuid", key
 		);
+		log.debug("Category cache evict for {} :{} rows affected", key, affectedRow);
 	}
 
 	public Optional<MachineEntity> getMachineEntity(UUID key) {
@@ -76,8 +77,10 @@ public class CacheService {
 					"""
 							SELECT value FROM machine_cache WHERE id=?::uuid
 							""", String.class, key);
+			log.debug("Machine cache hit for {}", key);
 			return Optional.of(objectMapper.readValue(json, MachineEntity.class));
 		} catch (EmptyResultDataAccessException ex) {
+			log.debug("Machine cache miss for {}", key);
 			return Optional.empty();
 		} catch (Exception ex) {
 			throw new RuntimeException("failed to deserialize object", ex);
@@ -87,7 +90,7 @@ public class CacheService {
 	public void putMachine(MachineEntity machine) {
 		try {
 			String json = objectMapper.writeValueAsString(machine);
-			cacheJdbcTemplate.update(
+			int affectedRows = cacheJdbcTemplate.update(
 					"""
 							INSERT INTO machine_cache (id,value,inserted_at)
 							VALUES (?::uuid,?::jsonb,NOW())
@@ -96,29 +99,32 @@ public class CacheService {
 							""",
 					machine.getId(), json
 			);
+			log.debug("Machine cache put for {}: {} rows affected", machine.getId(), affectedRows);
 		} catch (Exception ex) {
 			throw new RuntimeException("failed to serialize object", ex);
 		}
 	}
 
 	public void evictMachine(UUID key) {
-		cacheJdbcTemplate.update("DELETE FROM machine_cache WHERE id=?::uuid", key);
+		int affectedRows = cacheJdbcTemplate.update("DELETE FROM machine_cache WHERE id=?::uuid", key);
+		log.debug("Machine cache evict for {}: {} rows removed", key, affectedRows);
 	}
 
 	public void putMachineImages(UUID machineId, MachineImageEntity machineImage) {
 		try{
 			String json = objectMapper.writeValueAsString(machineImage);
-			cacheJdbcTemplate.update(
+			int affectedRows = cacheJdbcTemplate.update(
 					"""
-                     INSERT INTO machine_image_cache (id,value,inserted_at)
+                     INSERT INTO machine_images_cache (machine_id,value,inserted_at)
                      VALUES (?::uuid,?::jsonb,NOW())
-                     ON CONFLICT (id) DO UPDATE
-                     SET value = machine_image_cache.value ||  ?::jsonb , inserted_at = NOW()
+                     ON CONFLICT (machine_id) DO UPDATE
+                     SET value = machine_images_cache.value ||  ?::jsonb , inserted_at = NOW()
                      """,
 					machineId,
 					"[" + json + "]",
 					"[" + json + "]"
 			);
+			log.debug("Machine image cache put for {}: {} rows affected", machineId, affectedRows);
 		}catch (Exception ex) {
 			throw new RuntimeException("failed to serialize object", ex);
 		}
@@ -127,15 +133,15 @@ public class CacheService {
 	public void putMachineImages(UUID machineId, List<MachineImageEntity> images) {
 		try {
 			String json = objectMapper.writeValueAsString(images);
-
-			cacheJdbcTemplate.update("""
-                     INSERT INTO machine_image_cache (id,value,inserted_at)
+			int affectedRows = cacheJdbcTemplate.update("""
+                     INSERT INTO machine_images_cache (machine_id,value,inserted_at)
                      VALUES (?::uuid,?::jsonb,NOW())
-                     ON CONFLICT (id) DO UPDATE
+                     ON CONFLICT (machine_id) DO UPDATE
                      SET value = EXCLUDED.value, inserted_at = NOW()
                      """,
-					machineId,json
+					machineId, json
 			);
+			log.debug("Machine images cache put for {}: {} rows affected", machineId, affectedRows);
 		}catch (Exception ex) {
 			throw  new RuntimeException("failed to serialize object", ex);
 		}
@@ -145,28 +151,31 @@ public class CacheService {
 	public Optional<List<MachineImageEntity>> getMachineImages(UUID  machineId) {
 		try {
 			String json = cacheJdbcTemplate.queryForObject(
-					"SELECT value FROM machine_image_cache WHERE id=?::uuid", String.class, machineId
+					"SELECT value FROM machine_images_cache WHERE machine_id=?::uuid", String.class, machineId
 			);
+			log.debug("Machine images cache hit for {}", machineId);
 			List<MachineImageEntity> images = objectMapper.readValue(json,
 					objectMapper.getTypeFactory()
 							.constructCollectionType(List.class, MachineImageEntity.class));
 			return Optional.of(images);
-
 		}catch (EmptyResultDataAccessException ex) {
+			log.debug("Machine images cache miss for {}", machineId);
 			return Optional.empty();
 		}catch (Exception ex) {
 			throw new RuntimeException("failed to serialize object", ex);
 		}
 	}
 	public void evictMachineImages(UUID  machineId) {
-		cacheJdbcTemplate.update("DELETE FROM machine_image_cache WHERE id=?::uuid", machineId);
+		int affectedRows = cacheJdbcTemplate.update("DELETE FROM machine_images_cache WHERE machine_id=?::uuid", machineId);
+		log.debug("Machine images cache evict for {}: {} rows removed", machineId, affectedRows);
 	}
 
 	public Optional<List<MaintenanceRecordEntity>> getMaintenanceRecord(UUID machineId) {
 		try {
 			String json = cacheJdbcTemplate.queryForObject(
-					"SELECT value FROM maintenance_records_cache WHERE id=?::uuid", String.class, machineId
+					"SELECT value FROM maintenance_records_cache WHERE machine_id=?::uuid", String.class, machineId
 			);
+			log.debug("Maintenance records cache hit for {}", machineId);
 			List<MaintenanceRecordEntity> records = objectMapper.readValue(
 					json,
 					objectMapper.getTypeFactory()
@@ -174,6 +183,7 @@ public class CacheService {
 			);
 			return Optional.of(records);
 		}catch (EmptyResultDataAccessException ex) {
+			log.debug("Maintenance records cache miss for {}", machineId);
 			return Optional.empty();
 		}
 		catch (Exception ex) {
@@ -184,17 +194,18 @@ public class CacheService {
 	public void putMaintenanceRecord(UUID machineId, MaintenanceRecordEntity maintenanceRecord) {
 		try {
 			String json = objectMapper.writeValueAsString(maintenanceRecord);
-			cacheJdbcTemplate.update(
+			int affectedRows = cacheJdbcTemplate.update(
 					"""
-                      INSERT INTO machine_records_cache (id,value,inserted_at)
+                      INSERT INTO maintenance_records_cache (machine_id,value,inserted_at)
                       VALUES (?::uuid,?::jsonb,NOW())
-                      ON CONFLICT (id) DO UPDATE
-                      SET value = machine_records_cache.value || ?::jsonb, inserted_at = NOW()
+                      ON CONFLICT (machine_id) DO UPDATE
+                      SET value = maintenance_records_cache.value || ?::jsonb, inserted_at = NOW()
                       """,
 					machineId,
 					"[" + json + "]",
 					"[" + json + "]"
 			);
+			log.debug("Maintenance records cache put for {}: {} rows affected", machineId, affectedRows);
 		}catch (Exception ex) {
 			throw new RuntimeException("failed to serialize object", ex);
 		}

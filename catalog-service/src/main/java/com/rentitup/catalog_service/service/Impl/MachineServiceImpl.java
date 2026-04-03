@@ -158,7 +158,8 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional
 	public MachineEntity addImage(UUID machineId, String url, boolean isPrimary) {
-		MachineEntity machine = getMachine(machineId);
+		MachineEntity machine = machineRepository.findById(machineId)
+				.orElseThrow(() -> new NotFoundException("Machine not found: " + machineId));
 
 		if (isPrimary) {
 			machine.getImages().forEach(img -> img.setPrimary(false));
@@ -185,7 +186,8 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional
 	public MachineEntity removeImage(UUID machineId, UUID imageId) {
-		MachineEntity machine = getMachine(machineId);
+		MachineEntity machine = machineRepository.findById(machineId)
+				.orElseThrow(() -> new NotFoundException("Machine not found: " + machineId));
 
 		MachineImageEntity imageToRemove = machine.getImages().stream()
 			.filter(img -> img.getId().equals(imageId))
@@ -208,7 +210,8 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional
 	public MachineEntity setPrimaryImage(UUID machineId, UUID imageId) {
-		MachineEntity machine = getMachine(machineId);
+		MachineEntity machine = machineRepository.findById(machineId)
+				.orElseThrow(() -> new NotFoundException("Machine not found: " + machineId));
 
 		MachineImageEntity newPrimary = machine.getImages().stream()
 			.filter(img -> img.getId().equals(imageId))

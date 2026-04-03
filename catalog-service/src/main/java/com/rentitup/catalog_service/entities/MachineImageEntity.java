@@ -1,6 +1,7 @@
 package com.rentitup.catalog_service.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rentitup.catalog_service.common.entites.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,6 +20,7 @@ public class MachineImageEntity extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "machine_id", nullable = false)
+	@JsonIgnore
 	private MachineEntity machine;
 
 	@Column(nullable = false, length = 500)

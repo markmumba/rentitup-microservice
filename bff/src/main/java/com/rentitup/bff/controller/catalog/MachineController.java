@@ -232,7 +232,7 @@ public class MachineController {
 	public ResponseEntity<?> getUploadUrl(
 			@PathVariable String machineId,
 			@RequestParam String filename,
-			@RequestParam String contentType) {
+			@RequestHeader("X-Content-Type") String contentType) {
 		log.info("REST: Get upload URL for machine: {}", machineId);
 
 		GetUploadUrlRequest request = GetUploadUrlRequest.newBuilder()

@@ -131,6 +131,7 @@ public class AuthorizationServerConfig {
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
 				.redirectUri(redirectUri)
+				.redirectUri("https://oauth.usebruno.com/callback")
 				.postLogoutRedirectUri(frontendUrl)
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
