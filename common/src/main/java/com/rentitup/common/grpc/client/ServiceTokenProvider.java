@@ -1,8 +1,11 @@
 package com.rentitup.common.grpc.client;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -64,7 +67,12 @@ public class ServiceTokenProvider {
 
 		HttpEntity<MultiValueMap<String,String>> request = new HttpEntity<>(body, headers);
 		try {
-			ResponseEntity<Map> response = restTemplate.postForEntity(tokenUri, request, Map.class);
+			ResponseEntity<Map<String,Object>> response = restTemplate.exchange(
+			tokenUri, 
+			HttpMethod.POST,
+			request,
+			new ParameterizedTypeReference<Map<String, Object>>() {}
+		 );
 			if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
 				throw new RuntimeException("Failed to request service token: " + response.getStatusCode());
 			}

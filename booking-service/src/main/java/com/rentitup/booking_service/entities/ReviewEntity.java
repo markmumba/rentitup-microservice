@@ -3,6 +3,7 @@ package com.rentitup.booking_service.entities;
 import com.rentitup.booking_service.common.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -46,6 +47,7 @@ public class ReviewEntity extends BaseEntity {
 	private Instant ownerResponseAt;
 
 	@Column(nullable = false)
+	@Builder.Default
 	private boolean ratingSynced = false;
 
 	private Instant syncedAt;

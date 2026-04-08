@@ -7,7 +7,6 @@ import com.rentitup.shared.proto.user.UserResponse;
 import com.rentitup.shared.proto.user.UserServiceGrpc;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 
 @Service
 

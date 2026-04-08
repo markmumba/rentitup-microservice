@@ -1,6 +1,5 @@
 package com.rentitup.booking_service.entities;
 
-import com.google.type.Decimal;
 import com.rentitup.booking_service.common.entities.BaseEntity;
 import com.rentitup.booking_service.enums.PaymentMethod;
 import com.rentitup.booking_service.enums.PaymentStatus;

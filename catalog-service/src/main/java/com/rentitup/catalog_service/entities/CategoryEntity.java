@@ -32,12 +32,13 @@ public class CategoryEntity extends BaseEntity {
 	@Builder.Default
 	private PriceCalculationType defaultPriceType = PriceCalculationType.DAILY;
 
-	@OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "category", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
 	@Builder.Default
 	@JsonIgnore
 	private List<MachineEntity> machines = new ArrayList<>();
 
 	@Formula("(SELECT COUNT(*) FROM catalog.machines m WHERE m.category_id = id)")
-	private int machineCount;
+	@Builder.Default
+	private int machineCount = 0;
 
 }

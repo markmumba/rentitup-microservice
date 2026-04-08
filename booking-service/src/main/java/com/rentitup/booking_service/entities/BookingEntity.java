@@ -9,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,6 +62,7 @@ public class BookingEntity extends BaseEntity {
 
 	private BigDecimal amountPaid;
 
+	@Builder.Default
 	private String currency = "KES";
 
 	private String specialRequirements;

@@ -36,16 +36,6 @@ BEGIN
         'DELETE FROM %I WHERE inserted_at < NOW() - $1',
         target_table
     ) USING retention_period;
-END;
+END ;
 $$ LANGUAGE plpgsql;
 
-CALL expire_cache('category_cache','60 minutes');
-CALL expire_cache('machine_cache','60 minutes');
-CALL expire_cache('machine_images_cache','60 minutes');
-
-/*
-Then schedule it with pg_cron if you have it, or call it from your Spring app with a @Scheduled method.
-*/
-
-/*
-*/

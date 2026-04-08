@@ -133,7 +133,6 @@ public class MachineServiceImpl implements MachineService {
 		machine.setDeleted(true);
 		machineRepository.save(machine);
 		cacheService.evictMachine(id);
-		cacheService.evictMachineImages(id);
 		return "Machine deleted successfully";
 	}
 
@@ -179,7 +178,6 @@ public class MachineServiceImpl implements MachineService {
 		machine.addImage(image);
 		MachineEntity saved = machineRepository.save(machine);
 		cacheService.putMachine(saved);
-		cacheService.putMachineImages(machineId, saved.getImages());
 		return saved;
 	}
 
@@ -198,12 +196,11 @@ public class MachineServiceImpl implements MachineService {
 		machine.removeImage(imageToRemove);
 
 		if (wasPrimary && !machine.getImages().isEmpty()) {
-			machine.getImages().get(0).setPrimary(true);
+			machine.getImages().getFirst().setPrimary(true);
 		}
 
 		MachineEntity saved = machineRepository.save(machine);
 		cacheService.putMachine(saved);
-		cacheService.putMachineImages(machineId, saved.getImages());
 		return saved;
 	}
 
@@ -223,7 +220,6 @@ public class MachineServiceImpl implements MachineService {
 
 		MachineEntity saved = machineRepository.save(machine);
 		cacheService.putMachine(saved);
-		cacheService.putMachineImages(machineId, saved.getImages());
 		return saved;
 	}
 

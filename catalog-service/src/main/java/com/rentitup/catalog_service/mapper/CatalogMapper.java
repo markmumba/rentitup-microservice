@@ -41,12 +41,15 @@ public interface CatalogMapper {
 	@Mapping(target = "allFields", ignore = true)
 	@Mapping(target = "createdAt" , ignore = true)
 	@Mapping(target = "updatedAt", ignore = true)
+	@Mapping(target ="mergeUpdatedAt", ignore=true)
+	@Mapping(target = "mergeCreatedAt",ignore = true)
 	Category toProto(CategoryEntity entity);
 
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
 	@Mapping(target = "updatedAt", ignore = true)
 	@Mapping(target = "machines", ignore = true)
+	@Mapping(target= "machineCount",ignore = true)
 	CategoryEntity toEntity(CreateCategoryRequest request);
 
 	default PriceCalculationType map(com.rentitup.shared.proto.catalog.PriceCalculationType type) {
@@ -110,7 +113,7 @@ public interface CatalogMapper {
 	default MachineEntity toEntity(CreateMachineRequest request) {
 		if (request == null) return null;
 
-		MachineEntity.MachineEntityBuilder builder = MachineEntity.builder()
+		var builder = MachineEntity.builder()
 				.ownerId(UUID.fromString(request.getOwnerId()))
 				.name(request.getName())
 				.description(request.getDescription());
@@ -152,7 +155,7 @@ public interface CatalogMapper {
 
 		// For updates, only set fields that are present in the request
 		// The service layer will merge these with the existing entity
-		MachineEntity.MachineEntityBuilder builder = MachineEntity.builder();
+		var builder = MachineEntity.builder();
 
 		if (request.hasName()) {
 			builder.name(request.getName());
@@ -253,7 +256,7 @@ public interface CatalogMapper {
 
 	default MaintenanceRecordEntity toEntity(AddMaintenanceRecordRequest request){
 		if (request == null) return null;
-		MaintenanceRecordEntity.MaintenanceRecordEntityBuilder builder = MaintenanceRecordEntity.builder()
+		var builder = MaintenanceRecordEntity.builder()
 				.serviceDate(mapProtoDate(request.getServiceDate()))
 				.performedBy(request.getPerformedBy())
 				.description(request.getDescription());
