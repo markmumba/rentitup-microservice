@@ -13,6 +13,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -27,7 +31,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
@@ -62,6 +69,8 @@ public class SecurityConfig {
 				)
 				// OAuth2 Login (for browser-based login with sessions)
 				.oauth2Login(oauth2 -> oauth2
+						.userInfoEndpoint(userInfo ->
+								userInfo.userAuthoritiesMapper(oidcAuthoritiesMapper()))
 						.successHandler(oauth2AuthenticationSuccessHandler())
 						.failureUrl(frontendUrl + "/login?error=true")
 				)
@@ -70,7 +79,7 @@ public class SecurityConfig {
 						.logoutUrl("/api/v1/auth/logout")
 						.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
 						.invalidateHttpSession(true)
-						.deleteCookies("JSESSIONID")
+						.deleteCookies("BFFSESSION")
 				)
 				// Resource server for API calls with Bearer token (mobile apps, etc.)
 				.oauth2ResourceServer(oauth2 -> oauth2
@@ -155,5 +164,35 @@ public class SecurityConfig {
 		JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 		converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
 		return converter;
+	}
+
+	@Bean
+	public GrantedAuthoritiesMapper oidcAuthoritiesMapper() {
+		return authorities -> {
+			Set<GrantedAuthority> mappedAuthorities = new HashSet<>(authorities);
+
+			for (GrantedAuthority authority : authorities) {
+				if (!(authority instanceof OidcUserAuthority oidcAuthority)) {
+					continue;
+				}
+
+				addRole(mappedAuthorities, oidcAuthority.getAttributes().get("role"));
+				Object rolesClaim = oidcAuthority.getAttributes().get("roles");
+				if (rolesClaim instanceof Collection<?> roles) {
+					roles.forEach(role -> addRole(mappedAuthorities, role));
+				}
+			}
+
+			return mappedAuthorities;
+		};
+	}
+
+	private void addRole(Set<GrantedAuthority> authorities, Object roleValue) {
+		if (roleValue == null) {
+			return;
+		}
+		String role = roleValue.toString();
+		authorities.add(new SimpleGrantedAuthority(
+				role.startsWith("ROLE_") ? role : "ROLE_" + role));
 	}
 }

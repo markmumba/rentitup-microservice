@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PaymentService {
-	PaymentEntity createPaymentEntry(UUID bookingId, BigDecimal amount, String currency, PaymentType type, String transactionId);
+	PaymentEntity createPaymentEntry(UUID bookingId, UUID customerId, BigDecimal amount, String currency,
+									 PaymentType type, String transactionId);
 
 	PaymentEntity updatePaymentStatus(UUID paymentId, PaymentStatus status);
 

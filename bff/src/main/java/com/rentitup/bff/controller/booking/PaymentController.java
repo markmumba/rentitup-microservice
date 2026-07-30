@@ -2,6 +2,7 @@ package com.rentitup.bff.controller.booking;
 
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.common.grpc.client.GrpcClient;
+import com.rentitup.common.security.SecurityUtils;
 import com.rentitup.shared.proto.booking.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,7 +26,10 @@ public class PaymentController {
 	public ResponseEntity<?> createPayment(@RequestBody CreatePaymentRequest request) {
 		log.info("Creating payment for booking: {}", request.getBookingId());
 
-		PaymentResponse response = bookingStub.createPayment(request);
+		CreatePaymentRequest secureRequest = request.toBuilder()
+				.setCustomerId(SecurityUtils.requiredCurrentUserId())
+				.build();
+		PaymentResponse response = bookingStub.createPayment(secureRequest);
 		return ResponseBuilder.created("Payment initiated successfully", response.getPayment());
 	}
 

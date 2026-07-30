@@ -55,9 +55,6 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 
 		if (authHeader != null && authHeader.startsWith("Bearer ")) {
 			String token = authHeader.substring(7);
-			String tokenPreview = token.length() > 20 ? token.substring(0, 20) + "..." : token;
-			log.info("[gRPC-SERVER] Token received: {}", tokenPreview);
-			log.info("[gRPC-SERVER] Token received : {}", token);
 
 			try {
 				Jwt jwt = jwtDecoder.decode(token);
@@ -68,7 +65,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 						jwt.getClaimAsString("token_type"),
 						jwt.getClaimAsString("user_id"));
 
-			} catch (JwtException e) {
+			} catch (JwtException | IllegalArgumentException e) {
 				log.warn("[gRPC-SERVER] Invalid JWT token: {}", e.getMessage());
 
 				if (!isPublicMethod) {
@@ -104,14 +101,25 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 		String role = jwt.getClaimAsString("role");
 		String email = jwt.getClaimAsString("email");
 		String tokenType = jwt.getClaimAsString("token_type");
+		String clientId = jwt.getClaimAsString("client_id");
 
-		Context initial = Context.current()
+		if (!"USER".equals(tokenType) && !"SERVICE".equals(tokenType)) {
+			throw new IllegalArgumentException("Unsupported token type");
+		}
+		if ("USER".equals(tokenType) && (userId == null || role == null || email == null)) {
+			throw new IllegalArgumentException("User token is missing required identity claims");
+		}
+		if ("SERVICE".equals(tokenType) && clientId == null) {
+			throw new IllegalArgumentException("Service token is missing client_id");
+		}
+
+		Context context = Context.current()
 				.withValue(GrpcAuthContext.TOKEN, token)
 				.withValue(GrpcAuthContext.TOKEN_TYPE, tokenType)
 				.withValue(GrpcAuthContext.IS_AUTHENTICATED,Boolean.TRUE);
 
 		if ("USER".equals(tokenType)){
-			initial
+			context = context
 					.withValue(GrpcAuthContext.USER_ID, userId)
 					.withValue(GrpcAuthContext.ROLE, role)
 					.withValue(GrpcAuthContext.USER_EMAIL, email);
@@ -120,10 +128,10 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 					jwt.getClaimAsString("email"),
 					jwt.getClaimAsString("user_type"));
 
-		}else if ("SERVER".equals(tokenType)){
-			initial
-					.withValue(GrpcAuthContext.CLIENT_ID, userId);
-			log.debug("Authenticated service: {}", jwt.getClaimAsString("client_id"));
+			}else if ("SERVICE".equals(tokenType)){
+				context = context
+						.withValue(GrpcAuthContext.CLIENT_ID, clientId);
+				log.debug("Authenticated service: {}", clientId);
 		}
 
 		Set<String> roles = new HashSet<>();
@@ -136,8 +144,9 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
 			}
 		}
 
-		initial.withValue(GrpcAuthContext.ROLES, roles);
-		return initial;
+		context = context.withValue(GrpcAuthContext.ROLES, roles);
+
+		return context;
 	}
 
 	private Context buildUnauthenticatedContext() {

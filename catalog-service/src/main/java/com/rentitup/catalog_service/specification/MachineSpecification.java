@@ -37,6 +37,13 @@ public class MachineSpecification {
 		};
 	}
 
+	public static Specification<MachineEntity> notOwnedBy(UUID ownerId) {
+		return (root, query, cb) -> {
+			if (ownerId == null) return cb.conjunction();
+			return cb.notEqual(root.get("ownerId"), ownerId);
+		};
+	}
+
 	public static Specification<MachineEntity> hasMinCondition(MachineCondition minCondition) {
 		return (root, query, cb) -> {
 			if (minCondition == null) return cb.conjunction();

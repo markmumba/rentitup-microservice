@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public interface MachineService {
 	MachineEntity createMachine(MachineEntity machine, UUID categoryId);
 	MachineEntity getMachine(UUID id);
-	MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId);
+	MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId, Boolean available);
 	String deleteMachine(UUID id);
 	Page<MachineEntity> findAll(Specification<MachineEntity> spec, Pageable pageable);
 	Page<MachineEntity> findFeaturedMachines(Specification<MachineEntity> spec, Pageable pageable);

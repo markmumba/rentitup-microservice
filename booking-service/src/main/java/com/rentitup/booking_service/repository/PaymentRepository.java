@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface PaymentRepository extends JpaRepository<PaymentEntity, UUID> {
 	List<PaymentEntity> findByBookingId(UUID bookingId);
+
+	boolean existsByTransactionId(String transactionId);
 }

@@ -186,9 +186,11 @@ public class BookingController {
 		return switch (status.toUpperCase()) {
 			case "PENDING" -> BookingStatus.BOOKING_PENDING;
 			case "CONFIRMED" -> BookingStatus.BOOKING_CONFIRMED;
+			case "PAID" -> BookingStatus.BOOKING_PAID;
 			case "ONGOING" -> BookingStatus.BOOKING_ONGOING;
 			case "COMPLETED" -> BookingStatus.BOOKING_COMPLETED;
 			case "CANCELLED" -> BookingStatus.BOOKING_CANCELLED;
+			case "REJECTED" -> BookingStatus.BOOKING_REJECTED;
 			default -> BookingStatus.BOOKING_STATUS_UNSPECIFIED;
 		};
 	}

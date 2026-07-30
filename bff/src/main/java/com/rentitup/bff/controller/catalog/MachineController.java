@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,11 +34,15 @@ public class MachineController {
 
 	@Operation(summary = "Create a new machine", description = "Creates a new machine listing")
 	@PostMapping
+	@PreAuthorize("hasRole('OWNER')")
 	public ResponseEntity<?> createMachine(@Valid @RequestBody CreateMachineRequest request) {
 		String ownerId = SecurityUtils.getCurrentUserId();
 		log.info("REST: Create machine request: name={} categoryId={} ownerId={}", request.getName(), request.getCategoryId(), ownerId);
 
-		MachineResponse response = catalogServiceStub.createMachine(request);
+		CreateMachineRequest grpcRequest = request.toBuilder()
+				.setOwnerId(ownerId)
+				.build();
+		MachineResponse response = catalogServiceStub.createMachine(grpcRequest);
 		return ResponseBuilder.created("Machine created successfully", ProtoJsonUtil.toMap(response.getMachine()));
 	}
 
@@ -59,6 +64,7 @@ public class MachineController {
 
 	@Operation(summary = "Update a machine", description = "Updates an existing machine")
 	@PutMapping("/{id}")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> updateMachine(
 			@Parameter(description = "Machine ID") @PathVariable String id,
 			@Valid @RequestBody UpdateMachineRequest request) {
@@ -85,6 +91,7 @@ public class MachineController {
 
 	@Operation(summary = "Delete a machine", description = "Soft deletes a machine")
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> deleteMachine(@Parameter(description = "Machine ID") @PathVariable String id) {
 		log.info("REST: Delete machine request: {}", id);
 		DeleteMachineRequest request = DeleteMachineRequest.newBuilder()
@@ -103,7 +110,8 @@ public class MachineController {
 			@RequestParam(defaultValue = "10") int size,
 			@RequestParam(required = false) String categoryId,
 			@RequestParam(required = false) MachineStatus status,
-			@RequestParam(required = false) MachineCondition minCondition) {
+			@RequestParam(required = false) MachineCondition minCondition,
+			@RequestParam(defaultValue = "false") boolean excludeOwned) {
 		log.info("REST: List machines request - page: {}, size: {}", page, size);
 
 		ListMachinesRequest.Builder builder = ListMachinesRequest.newBuilder()
@@ -112,6 +120,7 @@ public class MachineController {
 		if (categoryId != null) builder.setCategoryId(categoryId);
 		if (status != null) builder.setStatus(status);
 		if (minCondition != null) builder.setMinCondition(minCondition);
+		if (excludeOwned) builder.setExcludedOwnerId(SecurityUtils.getCurrentUserId());
 
 		ListMachinesResponse response = catalogServiceStub.listMachines(builder.build());
 		return buildMachineListResponse(response);
@@ -229,6 +238,7 @@ public class MachineController {
 
 	@Operation(summary = "Get upload URL", description = "Generates a pre-signed URL for uploading machine images")
 	@PostMapping("/{machineId}/upload-url")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> getUploadUrl(
 			@PathVariable String machineId,
 			@RequestParam String filename,
@@ -247,6 +257,7 @@ public class MachineController {
 
 	@Operation(summary = "Add machine image", description = "Adds an image to a machine after uploading")
 	@PostMapping("/{machineId}/images")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> addMachineImage(
 			@PathVariable String machineId,
 			@RequestBody AddMachineImageRequest request) {
@@ -264,6 +275,7 @@ public class MachineController {
 
 	@Operation(summary = "Remove machine image", description = "Removes an image from a machine")
 	@DeleteMapping("/{machineId}/images/{imageId}")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> removeMachineImage(
 			@PathVariable String machineId,
 			@PathVariable String imageId) {
@@ -280,6 +292,7 @@ public class MachineController {
 
 	@Operation(summary = "Set primary image", description = "Sets an image as the primary image for a machine")
 	@PutMapping("/{machineId}/images/{imageId}/primary")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> setPrimaryImage(
 			@PathVariable String machineId,
 			@PathVariable String imageId) {
@@ -298,6 +311,7 @@ public class MachineController {
 
 	@Operation(summary = "Add maintenance record", description = "Records a maintenance event for a machine")
 	@PostMapping("/{machineId}/maintenance")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> addMaintenanceRecord(
 			@PathVariable String machineId,
 			@RequestBody AddMaintenanceRecordRequest request) {
@@ -319,6 +333,7 @@ public class MachineController {
 
 	@Operation(summary = "Get maintenance history", description = "Retrieves maintenance history for a machine")
 	@GetMapping("/{machineId}/maintenance")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> getMaintenanceHistory(
 			@PathVariable String machineId,
 			@RequestParam(defaultValue = "1") int page,
@@ -346,6 +361,7 @@ public class MachineController {
 
 	@Operation(summary = "Get upcoming maintenance", description = "Retrieves upcoming maintenance for all machines owned by a user")
 	@GetMapping("/owner/{ownerId}/upcoming-maintenance")
+	@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 	public ResponseEntity<?> getUpcomingMaintenance(
 			@PathVariable String ownerId,
 			@RequestParam(defaultValue = "30") int daysAhead) {

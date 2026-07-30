@@ -10,6 +10,8 @@ import com.rentitup.booking_service.service.BookingService;
 import com.rentitup.booking_service.service.PaymentService;
 import com.rentitup.booking_service.service.ReviewService;
 import com.rentitup.common.grpc.GrpcExceptionHandler;
+import com.rentitup.common.grpc.server.GrpcAuthContext;
+import com.rentitup.common.exceptions.ForbiddenException;
 import com.rentitup.common.util.PaginationHelper;
 import com.rentitup.shared.proto.booking.*;
 import com.rentitup.shared.proto.common.Empty;
@@ -175,6 +177,11 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 		try {
 			log.info("gRPC: Create payment for booking: {}", request.getBookingId());
 			UUID bookingId = UUID.fromString(request.getBookingId());
+			UUID customerId = UUID.fromString(request.getCustomerId());
+			UUID authenticatedCustomerId = UUID.fromString(GrpcAuthContext.requireUserId());
+			if (!authenticatedCustomerId.equals(customerId)) {
+				throw new ForbiddenException("A customer can only initiate their own payment");
+			}
 			BigDecimal amount = new BigDecimal(request.getAmount().getAmount());
 			String currency = request.getAmount().getCurrency();
 			String transactionId = request.getTransactionId();
@@ -184,7 +191,8 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 				throw new IllegalArgumentException("Payment type is required");
 			}
 
-			PaymentEntity payment = paymentService.createPaymentEntry(bookingId, amount, currency, type, transactionId);
+			PaymentEntity payment = paymentService.createPaymentEntry(
+					bookingId, customerId, amount, currency, type, transactionId);
 
 			PaymentResponse response = PaymentResponse.newBuilder()
 					.setPayment(bookingMapper.toProto(payment))
@@ -202,6 +210,9 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 			StreamObserver<PaymentResponse> responseObserver) {
 		try {
 			log.info("gRPC: Update payment status: {}", request.getId());
+			if (!GrpcAuthContext.isServiceToken() && !"ADMIN".equals(GrpcAuthContext.getRole())) {
+				throw new ForbiddenException("Only a trusted service or admin can update payment status");
+			}
 			UUID paymentId = UUID.fromString(request.getId());
 			com.rentitup.booking_service.enums.PaymentStatus status =
 					bookingMapper.mapProtoPaymentStatus(request.getStatus());

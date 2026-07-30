@@ -29,13 +29,12 @@ public class BearerTokenInterceptor implements ClientInterceptor {
 					String authValue = token.startsWith("Bearer ") ? token : "Bearer " + token;
 					headers.put(AUTHORIZATION_KEY, authValue);
 
-					String tokenPreview = token.length() > 20 ? token.substring(0, 20) + "..." : token;
 					if (tokenResolver.hasUserToken()) {
-						log.info("[gRPC-CLIENT] Forwarding USER token to: {} (token: {})",
-								method.getFullMethodName(), tokenPreview);
+						log.debug("[gRPC-CLIENT] Forwarding USER token to: {}",
+								method.getFullMethodName());
 					} else {
-						log.info("[gRPC-CLIENT] Using SERVICE token for: {} (token: {})",
-								method.getFullMethodName(), tokenPreview);
+						log.debug("[gRPC-CLIENT] Using SERVICE token for: {}",
+								method.getFullMethodName());
 					}
 				} else {
 					log.info("[gRPC-CLIENT] No token available for: {}", method.getFullMethodName());

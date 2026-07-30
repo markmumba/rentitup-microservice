@@ -112,10 +112,12 @@ public interface BookingMapper {
 		if (status == null) return com.rentitup.shared.proto.booking.BookingStatus.BOOKING_STATUS_UNSPECIFIED;
 		return switch (status) {
 			case PENDING -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_PENDING;
-			case CONFIRMED, PAID -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_CONFIRMED;
+			case CONFIRMED -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_CONFIRMED;
+			case PAID -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_PAID;
 			case ONGOING -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_ONGOING;
 			case COMPLETED -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_COMPLETED;
-			case CANCELLED, REJECTED -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_CANCELLED;
+			case CANCELLED -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_CANCELLED;
+			case REJECTED -> com.rentitup.shared.proto.booking.BookingStatus.BOOKING_REJECTED;
 		};
 	}
 
@@ -124,9 +126,11 @@ public interface BookingMapper {
 		return switch (status) {
 			case BOOKING_PENDING -> BookingStatus.PENDING;
 			case BOOKING_CONFIRMED -> BookingStatus.CONFIRMED;
+			case BOOKING_PAID -> BookingStatus.PAID;
 			case BOOKING_ONGOING -> BookingStatus.ONGOING;
 			case BOOKING_COMPLETED -> BookingStatus.COMPLETED;
 			case BOOKING_CANCELLED -> BookingStatus.CANCELLED;
+			case BOOKING_REJECTED -> BookingStatus.REJECTED;
 			case BOOKING_STATUS_UNSPECIFIED, UNRECOGNIZED -> BookingStatus.PENDING;
 		};
 	}

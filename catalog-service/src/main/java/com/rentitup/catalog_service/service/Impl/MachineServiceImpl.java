@@ -79,7 +79,7 @@ public class MachineServiceImpl implements MachineService {
 
 	@Override
 	@Transactional
-	public MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId) {
+	public MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId, Boolean available) {
 		log.info("Updating machine: {}", id);
 
 		MachineEntity existing = getMachine(id);
@@ -92,6 +92,9 @@ public class MachineServiceImpl implements MachineService {
 		}
 		if (updates.getBasePrice() != null) {
 			existing.setBasePrice(updates.getBasePrice());
+			if (updates.getCurrency() != null && !updates.getCurrency().isBlank()) {
+				existing.setCurrency(updates.getCurrency());
+			}
 		}
 		if (updates.getPriceType() != null) {
 			existing.setPriceType(updates.getPriceType());
@@ -119,6 +122,9 @@ public class MachineServiceImpl implements MachineService {
 					() -> new NotFoundException("Category not found: " + categoryId)
 			);
 			existing.setCategory(category);
+		}
+		if (available != null) {
+			existing.setAvailable(available);
 		}
 
 		MachineEntity saved = machineRepository.save(existing);
@@ -245,7 +251,7 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional(readOnly = true)
 	public Page<MaintenanceRecordEntity> getUpcomingMaintenances(UUID ownerId, int daysAhead, Pageable pageable) {
-		if (userGrpcClient.userExists(ownerId)) {
+		if (!userGrpcClient.userExists(ownerId)) {
 			throw new NotFoundException("Owner not found: " + ownerId);
 		}
 		LocalDate now = LocalDate.now();

@@ -12,3 +12,11 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8081/eureka/}
+
+server:
+  servlet:
+    session:
+      cookie:
+        name: BFFSESSION
+        http-only: true
+        same-site: lax

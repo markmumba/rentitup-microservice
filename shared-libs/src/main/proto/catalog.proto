@@ -184,6 +184,7 @@ message ListMachinesRequest {
   optional string category_id = 2;
   optional MachineStatus status = 3;
   optional MachineCondition min_condition =4;
+  optional string excluded_owner_id = 5;
 }
 
 message SearchMachinesRequest {
@@ -394,7 +395,6 @@ service CatalogService {
   rpc UpdateMachineBookings (UpdateMachineBookingsRequest) returns(MachineResponse);
 
 }
-
 
 
 

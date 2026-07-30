@@ -5,6 +5,7 @@ import com.rentitup.catalog_service.entities.MachineEntity;
 import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
 import com.rentitup.catalog_service.mapper.CatalogMapper;
 import com.rentitup.catalog_service.service.CategoryService;
+import com.rentitup.catalog_service.service.CatalogAuthorizationService;
 import com.rentitup.catalog_service.service.MachineService;
 import com.rentitup.catalog_service.service.StorageService;
 import com.rentitup.catalog_service.specification.MachineSpecification;
@@ -44,6 +45,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	private final MachineService machineService;
 	private final CatalogMapper catalogMapper;
 	private final StorageService storageService;
+	private final CatalogAuthorizationService authorizationService;
 
 	@Override
 	@Transactional
@@ -152,8 +154,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 						.asRuntimeException());
 				return;
 			}
-			UUID categoryId = UUID.fromString(request.getCategoryId());
-			MachineEntity machine = catalogMapper.toEntity(request);
+				UUID categoryId = UUID.fromString(request.getCategoryId());
+				authorizationService.requireOwnerCreation(UUID.fromString(request.getOwnerId()));
+				MachineEntity machine = catalogMapper.toEntity(request);
 			MachineEntity createdMachine = machineService.createMachine(machine, categoryId);
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(createdMachine))
@@ -184,10 +187,12 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void updateMachine(UpdateMachineRequest request, StreamObserver<MachineResponse> responseObserver) {
 		try {
-			UUID id = UUID.fromString(request.getId());
-			UUID categoryId = request.hasCategoryId() ? UUID.fromString(request.getCategoryId()) : null;
+				UUID id = UUID.fromString(request.getId());
+				authorizationService.requireMachineOwnerOrAdmin(id);
+				UUID categoryId = request.hasCategoryId() ? UUID.fromString(request.getCategoryId()) : null;
 			MachineEntity updates = catalogMapper.toEntity(request);
-			MachineEntity machine = machineService.updateMachine(id, updates, categoryId);
+			Boolean available = request.hasIsAvailable() ? request.getIsAvailable() : null;
+			MachineEntity machine = machineService.updateMachine(id, updates, categoryId, available);
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
 					.build();
@@ -202,8 +207,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void deleteMachine(DeleteMachineRequest request, StreamObserver<DeleteMachineResponse> responseObserver) {
 		try {
-			UUID id = UUID.fromString(request.getId());
-			String message = machineService.deleteMachine(id);
+				UUID id = UUID.fromString(request.getId());
+				authorizationService.requireMachineOwnerOrAdmin(id);
+				String message = machineService.deleteMachine(id);
 			DeleteMachineResponse response = DeleteMachineResponse.newBuilder()
 					.setMessage(message)
 					.build();
@@ -225,7 +231,11 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 					.and(MachineSpecification.hasStatus(
 							request.hasStatus() ? catalogMapper.map(request.getStatus()) : null))
 					.and(MachineSpecification.hasMinCondition(
-							request.hasMinCondition() ? catalogMapper.map(request.getMinCondition()) : null));
+							request.hasMinCondition() ? catalogMapper.map(request.getMinCondition()) : null))
+					.and(MachineSpecification.notOwnedBy(
+							request.hasExcludedOwnerId()
+									? UUID.fromString(request.getExcludedOwnerId())
+									: null));
 			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			GrpcExceptionHandler.handleException(ex, responseObserver, "List machines");
@@ -310,8 +320,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Override
 	public void getMachineIdsByOwner(GetMachineIdsRequest request, StreamObserver<GetMachineIdsResponse> responseObserver) {
 		try {
-			UUID ownerId = UUID.fromString(request.getOwnerId());
-			List<UUID> machineIds = machineService.getMachineIdsByOwner(ownerId);
+				UUID ownerId = UUID.fromString(request.getOwnerId());
+				authorizationService.requireOwnerOrAdminOrService(ownerId);
+				List<UUID> machineIds = machineService.getMachineIdsByOwner(ownerId);
 			GetMachineIdsResponse response = GetMachineIdsResponse.newBuilder()
 					.addAllMachineIds(machineIds.stream().map(UUID::toString).toList())
 					.build();
@@ -334,9 +345,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Override
 	public void getUploadUrl(GetUploadUrlRequest request, StreamObserver<GetUploadUrlResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			machineService.getMachine(machineId);
-			StorageService.UploadUrlResult result = storageService.generateUploadUrl(
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				StorageService.UploadUrlResult result = storageService.generateUploadUrl(
 					machineId, request.getFilename(), request.getContentType());
 			GetUploadUrlResponse response = GetUploadUrlResponse.newBuilder()
 					.setUploadUrl(result.uploadUrl())
@@ -355,8 +366,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void addMachineImage(AddMachineImageRequest request, StreamObserver<MachineResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			MachineEntity machine = machineService.addImage(machineId, request.getUrl(), request.getIsPrimary());
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				MachineEntity machine = machineService.addImage(machineId, request.getUrl(), request.getIsPrimary());
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
 					.build();
@@ -371,8 +383,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void removeMachineImage(RemoveMachineImageRequest request, StreamObserver<MachineResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			UUID imageId = UUID.fromString(request.getImageId());
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				UUID imageId = UUID.fromString(request.getImageId());
 			MachineEntity machine = machineService.removeImage(machineId, imageId);
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
@@ -388,8 +401,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void setPrimaryImage(SetPrimaryImageRequest request, StreamObserver<MachineResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			UUID imageId = UUID.fromString(request.getImageId());
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				UUID imageId = UUID.fromString(request.getImageId());
 			MachineEntity machine = machineService.setPrimaryImage(machineId, imageId);
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
@@ -405,8 +419,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void addMaintenanceRecord(AddMaintenanceRecordRequest request, StreamObserver<MaintenanceRecordResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			MaintenanceRecordEntity maintenanceRecord = catalogMapper.toEntity(request);
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				MaintenanceRecordEntity maintenanceRecord = catalogMapper.toEntity(request);
 			MaintenanceRecordEntity saved = machineService.createMaintenanceRecord(maintenanceRecord, machineId);
 			MaintenanceRecordResponse response = MaintenanceRecordResponse.newBuilder()
 					.setRecord(catalogMapper.toProto(saved))
@@ -421,8 +436,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Override
 	public void getMaintenanceHistory(GetMaintenanceHistoryRequest request, StreamObserver<MaintenanceHistoryResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				Pageable pageable = PaginationHelper.toPageable(request.getPagination());
 			Page<MaintenanceRecordEntity> page = machineService.getMaintenanceHistory(machineId, pageable);
 			MaintenanceHistoryResponse.Builder responseBuilder = MaintenanceHistoryResponse.newBuilder()
 					.setPagination(PaginationHelper.toProto(page));
@@ -463,8 +479,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Transactional
 	public void updateMachineStatus(UpdateMachineStatusRequest request, StreamObserver<MachineResponse> responseObserver) {
 		try {
-			UUID machineId = UUID.fromString(request.getMachineId());
-			MachineEntity machine = machineService.updateMachineStatus(machineId, catalogMapper.map(request.getStatus()));
+				UUID machineId = UUID.fromString(request.getMachineId());
+				authorizationService.requireMachineOwnerOrAdmin(machineId);
+				MachineEntity machine = machineService.updateMachineStatus(machineId, catalogMapper.map(request.getStatus()));
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
 					.build();
@@ -547,8 +564,9 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 	@Override
 	public void getUpcomingMaintenance(GetUpcomingMaintenanceRequest request, StreamObserver<MaintenanceHistoryResponse> responseObserver) {
 		try {
-			UUID ownerId = UUID.fromString(request.getOwnerId());
-			int daysAhead = request.getDaysAhead() > 0 ? request.getDaysAhead() : 30;
+				UUID ownerId = UUID.fromString(request.getOwnerId());
+				authorizationService.requireOwnerOrAdminOrService(ownerId);
+				int daysAhead = request.getDaysAhead() > 0 ? request.getDaysAhead() : 30;
 			Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.ASC, "nextServiceDate"));
 			Page<MaintenanceRecordEntity> page = machineService.getUpcomingMaintenances(ownerId, daysAhead, pageable);
 			MaintenanceHistoryResponse.Builder responseBuilder = MaintenanceHistoryResponse.newBuilder()
