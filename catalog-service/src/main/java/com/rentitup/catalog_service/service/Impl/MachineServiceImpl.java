@@ -1,14 +1,13 @@
 package com.rentitup.catalog_service.service.Impl;
 
-import com.rentitup.catalog_service.entities.CategoryEntity;
-import com.rentitup.catalog_service.entities.MachineEntity;
-import com.rentitup.catalog_service.entities.MachineImageEntity;
-import com.rentitup.catalog_service.entities.MaintenanceRecordEntity;
+import com.rentitup.catalog_service.entities.*;
 import com.rentitup.catalog_service.enums.MachineStatus;
+import com.rentitup.catalog_service.enums.MinioOutboxStatus;
 import com.rentitup.catalog_service.grpc.client.UserGrpcClient;
 import com.rentitup.catalog_service.repository.CategoryRepository;
 import com.rentitup.catalog_service.repository.MachineRepository;
 import com.rentitup.catalog_service.repository.MaintenanceRecordRepository;
+import com.rentitup.catalog_service.repository.MinioOutboxRepository;
 import com.rentitup.catalog_service.service.MachineService;
 import com.rentitup.catalog_service.shared.CacheService;
 import com.rentitup.common.exceptions.NotFoundException;
@@ -25,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -41,7 +41,7 @@ public class MachineServiceImpl implements MachineService {
 	private final MaintenanceRecordRepository maintenanceRecordRepository;
 	private final UserGrpcClient userGrpcClient;
 	private final CacheService cacheService;
-
+	private final MinioOutboxRepository minioOutboxRepository;
 
 
 	@Override
@@ -66,11 +66,15 @@ public class MachineServiceImpl implements MachineService {
 	public MachineEntity getMachine(UUID id) {
 		Optional<MachineEntity> cached = cacheService.getMachineEntity(id);
 		if (cached.isPresent()) {
+			if (cached.get().isDeleted()) {
+				cacheService.evictMachine(id);
+				throw new NotFoundException("Machine not found: " + id);
+			}
 			log.info("Cache hit for machine id={}", id);
 			return cached.get();
 		}
 		log.info("Cache miss for machine id={}", id);
-		MachineEntity machine = machineRepository.findById(id).orElseThrow(
+		MachineEntity machine = machineRepository.findByIdAndDeletedFalse(id).orElseThrow(
 				() -> new NotFoundException("Machine not found: " + id)
 		);
 		cacheService.putMachine(machine);
@@ -79,7 +83,7 @@ public class MachineServiceImpl implements MachineService {
 
 	@Override
 	@Transactional
-	public MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId, Boolean available) {
+	public MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId) {
 		log.info("Updating machine: {}", id);
 
 		MachineEntity existing = getMachine(id);
@@ -102,6 +106,9 @@ public class MachineServiceImpl implements MachineService {
 		if (updates.getCondition() != null) {
 			existing.setCondition(updates.getCondition());
 		}
+		if (updates.getStatus() != null) {
+			existing.setStatus(updates.getStatus());
+		}
 		if (updates.getLatitude() != null) {
 			existing.setLatitude(updates.getLatitude());
 		}
@@ -123,10 +130,6 @@ public class MachineServiceImpl implements MachineService {
 			);
 			existing.setCategory(category);
 		}
-		if (available != null) {
-			existing.setAvailable(available);
-		}
-
 		MachineEntity saved = machineRepository.save(existing);
 		cacheService.putMachine(saved);
 		return saved;
@@ -135,9 +138,28 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional
 	public String deleteMachine(UUID id) {
-		MachineEntity machine = getMachine(id);
+		MachineEntity machine = machineRepository.findByIdAndDeletedFalse(id)
+				.orElseThrow(() -> new NotFoundException("Machine not found: " + id));
+
+		List<MinioOutbox> cleanupEntries = machine.getImages().stream()
+				.map(MachineImageEntity::getObjectKey)
+				.filter(Objects::nonNull)
+				.filter(objectKey -> !objectKey.isBlank())
+				.distinct()
+				.map(objectKey -> {
+					MinioOutbox outbox = MinioOutbox.builder()
+							.objectKey(objectKey)
+							.status(MinioOutboxStatus.PENDING)
+							.build();
+					return outbox;
+				})
+				.toList();
+
 		machine.setDeleted(true);
-		machineRepository.save(machine);
+		machine.setStatus(MachineStatus.INACTIVE);
+		machine.getImages().clear();
+		machineRepository.saveAndFlush(machine);
+		minioOutboxRepository.saveAll(cleanupEntries);
 		cacheService.evictMachine(id);
 		return "Machine deleted successfully";
 	}
@@ -157,12 +179,12 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<MachineEntity> findAllByIds(List<UUID> ids) {
-		return machineRepository.findAllById(ids);
+		return machineRepository.findAllByIdInAndDeletedFalse(ids);
 	}
 
 	@Override
 	@Transactional
-	public MachineEntity addImage(UUID machineId, String url, boolean isPrimary) {
+	public MachineEntity addImage(UUID machineId, String url, String objectKey, boolean isPrimary) {
 		MachineEntity machine = machineRepository.findById(machineId)
 				.orElseThrow(() -> new NotFoundException("Machine not found: " + machineId));
 
@@ -177,6 +199,7 @@ public class MachineServiceImpl implements MachineService {
 
 		MachineImageEntity image = MachineImageEntity.builder()
 			.url(url)
+			.objectKey(objectKey)
 			.primary(isPrimary)
 			.displayOrder(nextOrder)
 			.build();
@@ -204,9 +227,17 @@ public class MachineServiceImpl implements MachineService {
 		if (wasPrimary && !machine.getImages().isEmpty()) {
 			machine.getImages().getFirst().setPrimary(true);
 		}
-
 		MachineEntity saved = machineRepository.save(machine);
 		cacheService.putMachine(saved);
+		if (imageToRemove.getObjectKey() != null && !imageToRemove.getObjectKey().isBlank()) {
+			MinioOutbox minioOutbox = MinioOutbox.builder()
+					.objectKey(imageToRemove.getObjectKey())
+					.status(MinioOutboxStatus.PENDING)
+					.build();
+			minioOutboxRepository.save(minioOutbox);
+		} else {
+			log.warn("Image {} has no object key; skipping physical storage cleanup", imageId);
+		}
 		return saved;
 	}
 
@@ -262,7 +293,7 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UUID> getMachineIdsByOwner(UUID ownerId) {
-		return machineRepository.findAllByOwnerId(ownerId).stream()
+		return machineRepository.findAllByOwnerIdAndDeletedFalse(ownerId).stream()
 				.map(MachineEntity::getId)
 				.toList();
 	}
@@ -276,11 +307,7 @@ public class MachineServiceImpl implements MachineService {
 			return false;
 		}
 
-		if (machine.getStatus() == MachineStatus.MAINTENANCE || machine.getStatus() == MachineStatus.INACTIVE) {
-			return false;
-		}
-
-		if (!machine.isAvailable()) {
+		if (machine.getStatus() != MachineStatus.AVAILABLE) {
 			return false;
 		}
 
@@ -297,12 +324,6 @@ public class MachineServiceImpl implements MachineService {
 		MachineEntity machine = getMachine(machineId);
 		machine.setStatus(status);
 
-		if (status == MachineStatus.AVAILABLE) {
-			machine.setAvailable(true);
-		} else if (status == MachineStatus.RENTED || status == MachineStatus.MAINTENANCE || status == MachineStatus.INACTIVE) {
-			machine.setAvailable(false);
-		}
-
 		MachineEntity saved = machineRepository.save(machine);
 		cacheService.putMachine(saved);
 		return saved;
@@ -311,7 +332,7 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional(readOnly = true)
 	public Map<UUID, MachineEntity> getMachinesBatch(List<UUID> machineIds) {
-		return machineRepository.findAllById(machineIds).stream()
+		return machineRepository.findAllByIdInAndDeletedFalse(machineIds).stream()
 				.collect(Collectors.toMap(MachineEntity::getId, Function.identity()));
 	}
 

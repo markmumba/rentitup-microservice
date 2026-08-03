@@ -74,10 +74,6 @@ public class MachineEntity extends BaseEntity {
 	@Builder.Default
 	private Map<String, String> specifications = new HashMap<>();
 
-	@Column(name = "is_available")
-	@Builder.Default
-	private boolean available = true;
-
 	@Column(name = "average_rating", precision = 2, scale = 1)
 	@Builder.Default
 	private BigDecimal averageRating = BigDecimal.ZERO;

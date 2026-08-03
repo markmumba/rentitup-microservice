@@ -51,8 +51,8 @@ public class MachineSpecification {
 		};
 	}
 
-	public static Specification<MachineEntity> isAvailable() {
-		return (root, query, cb) -> cb.equal(root.get("available"), true);
+	public static Specification<MachineEntity> hasAvailableStatus() {
+		return hasStatus(MachineStatus.AVAILABLE);
 	}
 
 	public static Specification<MachineEntity> notDeleted() {

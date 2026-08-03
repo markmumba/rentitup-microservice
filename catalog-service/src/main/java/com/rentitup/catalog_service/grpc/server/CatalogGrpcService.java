@@ -10,6 +10,7 @@ import com.rentitup.catalog_service.service.MachineService;
 import com.rentitup.catalog_service.service.StorageService;
 import com.rentitup.catalog_service.specification.MachineSpecification;
 import com.rentitup.common.grpc.GrpcExceptionHandler;
+import com.rentitup.common.exceptions.BadRequestException;
 import com.rentitup.common.util.PaginationHelper;
 import com.rentitup.shared.proto.catalog.*;
 import com.rentitup.shared.proto.common.Empty;
@@ -191,8 +192,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 				authorizationService.requireMachineOwnerOrAdmin(id);
 				UUID categoryId = request.hasCategoryId() ? UUID.fromString(request.getCategoryId()) : null;
 			MachineEntity updates = catalogMapper.toEntity(request);
-			Boolean available = request.hasIsAvailable() ? request.getIsAvailable() : null;
-			MachineEntity machine = machineService.updateMachine(id, updates, categoryId, available);
+			MachineEntity machine = machineService.updateMachine(id, updates, categoryId);
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
 					.build();
@@ -211,6 +211,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 				authorizationService.requireMachineOwnerOrAdmin(id);
 				String message = machineService.deleteMachine(id);
 			DeleteMachineResponse response = DeleteMachineResponse.newBuilder()
+					.setSuccess(true)
 					.setMessage(message)
 					.build();
 			responseObserver.onNext(response);
@@ -248,7 +249,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
 			Specification<MachineEntity> spec = Specification
 					.where(MachineSpecification.notDeleted())
-					.and(MachineSpecification.isAvailable())
+					.and(MachineSpecification.hasAvailableStatus())
 					.and(MachineSpecification.searchQuery(
 							request.hasQuery() ? request.getQuery() : null))
 					.and(MachineSpecification.hasCategory(
@@ -291,7 +292,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 			Pageable pageable = PageRequest.of(0, request.getLimit(), Sort.by(Sort.Direction.DESC, "averageRating"));
 			Specification<MachineEntity> spec = Specification
 					.where(MachineSpecification.notDeleted())
-					.and(MachineSpecification.isAvailable());
+					.and(MachineSpecification.hasAvailableStatus());
 			getAllMachines(responseObserver, pageable, spec);
 		} catch (Exception ex) {
 			GrpcExceptionHandler.handleException(ex, responseObserver, "Get featured machines");
@@ -304,7 +305,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 			Pageable pageable = PaginationHelper.toPageable(request.getPagination());
 			Specification<MachineEntity> spec = Specification
 					.where(MachineSpecification.notDeleted())
-					.and(MachineSpecification.isAvailable())
+					.and(MachineSpecification.hasAvailableStatus())
 					.and(MachineSpecification.isNearby(
 							BigDecimal.valueOf(request.getLocation().getLatitude()),
 							BigDecimal.valueOf(request.getLocation().getLongitude()),
@@ -349,6 +350,7 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 				authorizationService.requireMachineOwnerOrAdmin(machineId);
 				StorageService.UploadUrlResult result = storageService.generateUploadUrl(
 					machineId, request.getFilename(), request.getContentType());
+
 			GetUploadUrlResponse response = GetUploadUrlResponse.newBuilder()
 					.setUploadUrl(result.uploadUrl())
 					.setObjectKey(result.objectKey())
@@ -368,7 +370,15 @@ public class CatalogGrpcService extends CatalogServiceGrpc.CatalogServiceImplBas
 		try {
 				UUID machineId = UUID.fromString(request.getMachineId());
 				authorizationService.requireMachineOwnerOrAdmin(machineId);
-				MachineEntity machine = machineService.addImage(machineId, request.getUrl(), request.getIsPrimary());
+				String expectedPrefix = "machines/%s/".formatted(machineId);
+				if (request.getObjectKey().isBlank() || !request.getObjectKey().startsWith(expectedPrefix)) {
+					throw new BadRequestException("Invalid image object key");
+				}
+				MachineEntity machine = machineService.addImage(
+						machineId,
+						request.getUrl(),
+						request.getObjectKey(),
+						request.getIsPrimary());
 			MachineResponse response = MachineResponse.newBuilder()
 					.setMachine(catalogMapper.toProto(machine))
 					.build();

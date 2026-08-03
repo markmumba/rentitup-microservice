@@ -26,6 +26,9 @@ public class MachineImageEntity extends BaseEntity {
 	@Column(nullable = false, length = 500)
 	private String url;
 
+	@Column(name = "object_key", length = 500)
+	private String objectKey;
+
 	@Column(name = "is_primary")
 	@Builder.Default
 	private boolean primary = false;

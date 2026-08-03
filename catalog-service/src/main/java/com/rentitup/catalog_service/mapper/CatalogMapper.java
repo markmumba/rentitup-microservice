@@ -116,7 +116,8 @@ public interface CatalogMapper {
 		var builder = MachineEntity.builder()
 				.ownerId(UUID.fromString(request.getOwnerId()))
 				.name(request.getName())
-				.description(request.getDescription());
+				.description(request.getDescription())
+				.status(MachineStatus.INACTIVE);
 
 		if (request.hasBasePrice()) {
 			builder.basePrice(new BigDecimal(request.getBasePrice().getAmount()));
@@ -143,10 +144,6 @@ public interface CatalogMapper {
 		if (!request.getSpecificationsMap().isEmpty()) {
 			builder.specifications(request.getSpecificationsMap());
 		}
-		if (request.hasIsAvailable()) {
-			builder.available(request.getIsAvailable());
-		}
-
 		return builder.build();
 	}
 
@@ -155,7 +152,8 @@ public interface CatalogMapper {
 
 		// For updates, only set fields that are present in the request
 		// The service layer will merge these with the existing entity
-		var builder = MachineEntity.builder();
+		// Override the entity builder default so an omitted status remains an omitted update.
+		var builder = MachineEntity.builder().status(null);
 
 		if (request.hasName()) {
 			builder.name(request.getName());
@@ -188,8 +186,8 @@ public interface CatalogMapper {
 		if (!request.getSpecificationsMap().isEmpty()) {
 			builder.specifications(request.getSpecificationsMap());
 		}
-		if (request.hasIsAvailable()) {
-			builder.available(request.getIsAvailable());
+		if (request.hasStatus()) {
+			builder.status(map(request.getStatus()));
 		}
 
 		return builder.build();
@@ -210,7 +208,6 @@ public interface CatalogMapper {
 				.setPriceType(map(entity.getPriceType()))
 				.setCondition(map(entity.getCondition()))
 				.setStatus(map(entity.getStatus()))
-				.setIsAvailable(entity.isAvailable())
 				.setAverageRating(entity.getAverageRating().doubleValue())
 				.setTotalReviews(entity.getTotalReviews())
 				.setTotalRentals(entity.getTotalRentals())

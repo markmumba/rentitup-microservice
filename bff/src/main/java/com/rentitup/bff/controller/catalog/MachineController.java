@@ -83,7 +83,7 @@ public class MachineController {
 		if (!request.getSpecificationsMap().isEmpty()) {
 			builder.putAllSpecifications(request.getSpecificationsMap());
 		}
-		if (request.hasIsAvailable()) builder.setIsAvailable(request.getIsAvailable());
+		if (request.hasStatus()) builder.setStatus(request.getStatus());
 
 		MachineResponse response = catalogServiceStub.updateMachine(builder.build());
 		return ResponseBuilder.success("Machine updated successfully", ProtoJsonUtil.toMap(response.getMachine()));
@@ -98,7 +98,9 @@ public class MachineController {
 				.setId(id)
 				.build();
 		DeleteMachineResponse response = catalogServiceStub.deleteMachine(request);
-		return ResponseBuilder.success(response.getMessage(), null);
+		return ResponseBuilder.success(
+				response.getMessage(),
+				Map.of("id", id, "deleted", response.getSuccess()));
 	}
 
 	// ==================== Machine Listing & Search ====================
@@ -266,6 +268,7 @@ public class MachineController {
 		AddMachineImageRequest grpcRequest = AddMachineImageRequest.newBuilder()
 				.setMachineId(machineId)
 				.setUrl(request.getUrl())
+				.setObjectKey(request.getObjectKey())
 				.setIsPrimary(request.getIsPrimary())
 				.build();
 

@@ -18,12 +18,12 @@ import java.util.stream.Stream;
 public interface MachineService {
 	MachineEntity createMachine(MachineEntity machine, UUID categoryId);
 	MachineEntity getMachine(UUID id);
-	MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId, Boolean available);
+	MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId);
 	String deleteMachine(UUID id);
 	Page<MachineEntity> findAll(Specification<MachineEntity> spec, Pageable pageable);
 	Page<MachineEntity> findFeaturedMachines(Specification<MachineEntity> spec, Pageable pageable);
 	List<MachineEntity> findAllByIds(List<UUID> ids);
-	MachineEntity addImage(UUID machineId, String url, boolean isPrimary);
+	MachineEntity addImage(UUID machineId, String url, String objectKey, boolean isPrimary);
 	MachineEntity removeImage(UUID machineId, UUID imageId);
 	MachineEntity setPrimaryImage(UUID machineId, UUID imageId);
 	MaintenanceRecordEntity createMaintenanceRecord(MaintenanceRecordEntity maintenanceRecord, UUID machineId);
