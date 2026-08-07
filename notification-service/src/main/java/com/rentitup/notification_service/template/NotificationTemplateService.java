@@ -34,13 +34,13 @@ public class NotificationTemplateService {
         context.setVariable("appName", "RentItUp");
         context.setVariable("supportEmail", "support@rentitup.com");
 
-        String renderedSubject = renderString(template.subjectTemplate(), context);
+        String renderedSubject = renderString(template.getSubjectTemplate(), context);
         String renderedBody;
 
         if (channel == NotificationChannel.EMAIL) {
             renderedBody = templateEngine.process("email/" + templateKey, context);
         } else {
-            renderedBody = renderString(template.bodyTemplate(), context);
+            renderedBody = renderString(template.getBodyTemplate(), context);
         }
 
         return new RenderedTemplate(renderedSubject, renderedBody);
@@ -59,13 +59,13 @@ public class NotificationTemplateService {
     }
 
     private void validateRequiredFields(TemplateDefinition template, Map<String, String> data) {
-        List<String> missingFields = template.requiredFields().stream()
+        List<String> missingFields = template.getRequiredFields().stream()
                 .filter(field -> !data.containsKey(field) || data.get(field) == null)
                 .toList();
 
         if (!missingFields.isEmpty()) {
             throw new TemplateMissingFieldsException(
-                    "Missing required fields for template " + template.key() + ": " + missingFields);
+                    "Missing required fields for template " + template.getKey() + ": " + missingFields);
         }
     }
 

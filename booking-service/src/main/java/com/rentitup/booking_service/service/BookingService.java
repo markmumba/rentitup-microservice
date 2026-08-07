@@ -13,7 +13,7 @@ public interface BookingService {
 
 	BookingEntity getBookingById(UUID bookingId);
 
-	BookingEntity updateBookingStatus(UUID bookingId, BookingStatus status);
+	BookingEntity updateBookingStatus(UUID bookingId, BookingStatus status, UUID actorId, boolean actorIsAdmin);
 
 	Page<BookingEntity> getCustomerBookings(UUID customerId, Pageable pageable, BookingStatus status);
 

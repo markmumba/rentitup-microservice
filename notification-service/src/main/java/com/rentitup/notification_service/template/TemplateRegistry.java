@@ -22,8 +22,6 @@ public class TemplateRegistry {
     }
 
     private void registerDefaultTemplates() {
-        // ==================== Booking Templates ====================
-
         register(TemplateDefinition.builder()
                 .key("booking_confirmed")
                 .name("Booking Confirmation")
@@ -66,8 +64,6 @@ public class TemplateRegistry {
                 .requiredFields(List.of("machineName", "startDate", "pickupLocation"))
                 .build());
 
-        // ==================== Owner Notification Templates ====================
-
         register(TemplateDefinition.builder()
                 .key("new_booking_request")
                 .name("New Booking Request")
@@ -84,8 +80,6 @@ public class TemplateRegistry {
                 .bodyTemplate("New booking: {{customerName}} booked {{machineName}} from {{startDate}} to {{endDate}}. Amount: {{totalAmount}}")
                 .requiredFields(List.of("customerName", "machineName", "startDate", "endDate", "totalAmount"))
                 .build());
-
-        // ==================== Maintenance Templates ====================
 
         register(TemplateDefinition.builder()
                 .key("maintenance_reminder")
@@ -104,8 +98,6 @@ public class TemplateRegistry {
                 .requiredFields(List.of("machineName", "nextServiceDate"))
                 .build());
 
-        // ==================== Review Templates ====================
-
         register(TemplateDefinition.builder()
                 .key("review_request")
                 .name("Review Request")
@@ -123,8 +115,6 @@ public class TemplateRegistry {
                 .subjectTemplate("You received a new {{rating}}-star review!")
                 .requiredFields(List.of("ownerName", "machineName", "rating", "reviewText", "customerName"))
                 .build());
-
-        // ==================== Account Templates ====================
 
         register(TemplateDefinition.builder()
                 .key("welcome")
@@ -159,8 +149,6 @@ public class TemplateRegistry {
                 .requiredFields(List.of("userName", "reason"))
                 .build());
 
-        // ==================== Payment Templates ====================
-
         register(TemplateDefinition.builder()
                 .key("payment_received")
                 .name("Payment Received")
@@ -185,12 +173,83 @@ public class TemplateRegistry {
                 .subjectTemplate("Payout of {{amount}} has been sent")
                 .requiredFields(List.of("ownerName", "amount", "accountInfo"))
                 .build());
+
+        registerPushTemplates();
+    }
+
+    private void registerPushTemplates() {
+        register(pushTemplate(
+                "new_booking_request",
+                "New booking request",
+                "{{customerName}} requested {{machineName}} from {{startDate}} to {{endDate}}.",
+                "customerName", "machineName", "startDate", "endDate"
+        ));
+        register(pushTemplate(
+                "booking_confirmed",
+                "Booking confirmed",
+                "Your booking for {{machineName}} from {{startDate}} to {{endDate}} was accepted.",
+                "machineName", "startDate", "endDate"
+        ));
+        register(pushTemplate(
+                "booking_rejected",
+                "Booking declined",
+                "Your booking request for {{machineName}} was declined.",
+                "machineName"
+        ));
+        register(pushTemplate(
+                "booking_cancelled",
+                "Booking cancelled",
+                "Booking #{{bookingId}} for {{machineName}} was cancelled.",
+                "bookingId", "machineName"
+        ));
+        register(pushTemplate(
+                "booking_reminder",
+                "Rental starts soon",
+                "Your {{machineName}} booking starts {{startDate}}. Pickup at {{pickupLocation}}.",
+                "machineName", "startDate", "pickupLocation"
+        ));
+        register(pushTemplate(
+                "payment_received",
+                "Payment received",
+                "We received {{amount}} for booking #{{bookingId}}.",
+                "amount", "bookingId"
+        ));
+        register(pushTemplate(
+                "payment_failed",
+                "Payment failed",
+                "Payment for booking #{{bookingId}} failed. Please try again.",
+                "bookingId"
+        ));
+        register(pushTemplate(
+                "maintenance_reminder",
+                "Maintenance due",
+                "{{machineName}} needs service by {{nextServiceDate}}.",
+                "machineName", "nextServiceDate"
+        ));
+        register(pushTemplate(
+                "review_request",
+                "How was your rental?",
+                "Tell us about your experience with {{machineName}}.",
+                "machineName"
+        ));
+    }
+
+    private TemplateDefinition pushTemplate(String key, String subject, String body, String... requiredFields) {
+        return TemplateDefinition.builder()
+                .key(key)
+                .name(subject + " Push")
+                .description("Push notification for " + subject.toLowerCase(Locale.ROOT))
+                .channel(PUSH)
+                .subjectTemplate(subject)
+                .bodyTemplate(body)
+                .requiredFields(List.of(requiredFields))
+                .build();
     }
 
     public void register(TemplateDefinition template) {
-        String key = buildKey(template.key(), template.channel());
+        String key = buildKey(template.getKey(), template.getChannel());
         templates.put(key, template);
-        log.debug("Registered template: {} for channel: {}", template.key(), template.channel());
+        log.debug("Registered template: {} for channel: {}", template.getKey(), template.getChannel());
     }
 
     public Optional<TemplateDefinition> getTemplate(String templateKey, NotificationChannel channel) {
@@ -203,7 +262,7 @@ public class TemplateRegistry {
 
     public List<TemplateDefinition> getTemplatesByChannel(NotificationChannel channel) {
         return templates.values().stream()
-                .filter(t -> t.channel() == channel)
+                .filter(t -> t.getChannel() == channel)
                 .toList();
     }
 

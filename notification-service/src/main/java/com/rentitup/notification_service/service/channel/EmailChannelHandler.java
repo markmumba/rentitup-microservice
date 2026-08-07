@@ -44,9 +44,8 @@ public class EmailChannelHandler implements NotificationChannelHandler {
             helper.setFrom(fromAddress, fromName);
             helper.setTo(notification.getRecipient());
             helper.setSubject(notification.getSubject());
-            helper.setText(notification.getBody(), true); // true = HTML
+            helper.setText(notification.getBody(), true);
 
-            // Set priority header
             if (notification.getPriority() == NotificationEntity.NotificationPriority.URGENT ||
                 notification.getPriority() == NotificationEntity.NotificationPriority.HIGH) {
                 message.setHeader("X-Priority", "1");

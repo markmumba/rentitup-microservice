@@ -98,7 +98,9 @@ public class AuthorizationServerConfig {
 	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers("/login", "/error").permitAll()
+						// Chrome DevTools probes this path while the login page is open.
+						// It must not become Spring Security's saved post-login request.
+						.requestMatchers("/login", "/error", "/.well-known/appspecific/**").permitAll()
 						.anyRequest().authenticated()
 				)
 				.formLogin(form -> form
@@ -270,7 +272,6 @@ public class AuthorizationServerConfig {
 	}
 
 }
-
 
 
 

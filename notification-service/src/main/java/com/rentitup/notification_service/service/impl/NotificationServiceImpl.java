@@ -14,7 +14,6 @@ import com.rentitup.common.exceptions.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +22,7 @@ import java.util.*;
 
 @Service
 @Slf4j
+
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -39,11 +39,16 @@ public class NotificationServiceImpl implements NotificationService {
         this.notificationRepository = notificationRepository;
         this.templateService = templateService;
 
-        // Build a map of channel handlers
         this.channelHandlers = new EnumMap<>(NotificationChannel.class);
         for (NotificationChannelHandler handler : handlers) {
-            channelHandlers.put(handler.getChannel(), handler);
+            NotificationChannelHandler existing = channelHandlers.putIfAbsent(handler.getChannel(),handler);
+            if(existing != null) {
+                throw new IllegalStateException(
+                        "Multiple handlers registered for channel " + handler.getChannel()
+                );
+            }
         }
+
         log.info("Initialized notification service with {} channel handlers", channelHandlers.size());
     }
 
@@ -59,18 +64,14 @@ public class NotificationServiceImpl implements NotificationService {
     ) {
         log.info("Sending {} notification to {} using template: {}", channel, recipient, templateKey);
 
-        // Validate channel handler exists
         NotificationChannelHandler handler = getHandler(channel);
 
-        // Validate recipient format
         if (!handler.validateRecipient(recipient)) {
             throw new IllegalArgumentException("Invalid recipient format for channel " + channel + ": " + recipient);
         }
 
-        // Render template
         RenderedTemplate rendered = templateService.render(templateKey, channel, data);
 
-        // Create notification entity
         NotificationEntity notification = NotificationEntity.builder()
                 .userId(userId)
                 .recipient(recipient)
@@ -85,14 +86,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         notification = notificationRepository.save(notification);
 
-        // Send asynchronously
-        sendAsync(notification, handler);
+        deliver(notification, handler);
 
         return notification;
     }
 
-    @Async
-    protected void sendAsync(NotificationEntity notification, NotificationChannelHandler handler) {
+    private void deliver(NotificationEntity notification, NotificationChannelHandler handler) {
         try {
             handler.send(notification);
             notification.setStatus(NotificationStatus.SENT);
@@ -126,7 +125,6 @@ public class NotificationServiceImpl implements NotificationService {
                 results.add(notification);
             } catch (Exception e) {
                 log.error("Failed to send notification to {}: {}", request.recipient(), e.getMessage());
-                // Create a failed notification record
                 NotificationEntity failed = NotificationEntity.builder()
                         .recipient(request.recipient())
                         .channel(request.channel())
@@ -153,7 +151,6 @@ public class NotificationServiceImpl implements NotificationService {
         String batchId = UUID.randomUUID().toString();
         log.info("Broadcasting notification to {} recipients, batchId: {}", recipients.size(), batchId);
 
-        // Queue all notifications for async sending
         for (String recipient : recipients) {
             try {
                 send(recipient, channel, templateKey, data, null, priority);
@@ -202,7 +199,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setErrorMessage(null);
         notificationRepository.save(notification);
 
-        sendAsync(notification, handler);
+        deliver(notification, handler);
 
         return notification;
     }

@@ -99,6 +99,8 @@ message GetBookingRequest {
 message UpdateBookingStatusRequest {
   string id = 1;
   BookingStatus status = 2;
+  string actor_id = 3;
+  bool actor_is_admin = 4;
 }
 message CancelBookingRequest {
   string id = 1;
@@ -215,5 +217,4 @@ service BookingService {
   rpc GetReviewsByMachine(GetReviewsByMachineRequest) returns (ReviewsResponse);
   rpc GetReviewsByOwner(GetReviewsByOwnerRequest) returns (ReviewsResponse);
 }
-
 

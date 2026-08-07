@@ -13,9 +13,6 @@ import java.util.UUID;
 
 public interface NotificationService {
 
-    /**
-     * Sends a notification using a template
-     */
     NotificationEntity send(
             String recipient,
             NotificationChannel channel,
@@ -25,14 +22,8 @@ public interface NotificationService {
             NotificationPriority priority
     );
 
-    /**
-     * Sends multiple notifications
-     */
     List<NotificationEntity> sendBulk(List<NotificationRequest> requests);
 
-    /**
-     * Broadcasts the same notification to multiple recipients
-     */
     String broadcast(
             List<String> recipients,
             NotificationChannel channel,
@@ -41,14 +32,8 @@ public interface NotificationService {
             NotificationPriority priority
     );
 
-    /**
-     * Gets a notification by ID
-     */
     NotificationEntity getNotification(UUID notificationId);
 
-    /**
-     * Lists notifications with filters
-     */
     Page<NotificationEntity> listNotifications(
             UUID userId,
             NotificationChannel channel,
@@ -56,14 +41,8 @@ public interface NotificationService {
             Pageable pageable
     );
 
-    /**
-     * Retries a failed notification
-     */
     NotificationEntity retry(UUID notificationId);
 
-    /**
-     * Request DTO for bulk operations
-     */
     record NotificationRequest(
             String recipient,
             NotificationChannel channel,

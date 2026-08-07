@@ -122,7 +122,7 @@ public interface BookingMapper {
 	}
 
 	default BookingStatus mapProtoStatus(com.rentitup.shared.proto.booking.BookingStatus status) {
-		if (status == null) return BookingStatus.PENDING;
+		if (status == null) return null;
 		return switch (status) {
 			case BOOKING_PENDING -> BookingStatus.PENDING;
 			case BOOKING_CONFIRMED -> BookingStatus.CONFIRMED;
@@ -131,7 +131,7 @@ public interface BookingMapper {
 			case BOOKING_COMPLETED -> BookingStatus.COMPLETED;
 			case BOOKING_CANCELLED -> BookingStatus.CANCELLED;
 			case BOOKING_REJECTED -> BookingStatus.REJECTED;
-			case BOOKING_STATUS_UNSPECIFIED, UNRECOGNIZED -> BookingStatus.PENDING;
+			case BOOKING_STATUS_UNSPECIFIED, UNRECOGNIZED -> null;
 		};
 	}
 	default PaymentType mapPaymentType(com.rentitup.shared.proto.booking.PaymentType type) {

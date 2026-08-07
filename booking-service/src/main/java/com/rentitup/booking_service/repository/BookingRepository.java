@@ -20,8 +20,8 @@ public interface BookingRepository extends JpaRepository<BookingEntity, UUID> {
 		FROM BookingEntity b
 		WHERE b.machineId = :machineId
 		AND b.status NOT IN (:excludedStatuses)
-		AND b.startDate < :endDate
-		AND b.endDate > :startDate
+		AND b.startDate <= :endDate
+		AND b.endDate >= :startDate
 		""")
 	boolean existsOverlappingBooking(
 			@Param("machineId") UUID machineId,
@@ -41,6 +41,10 @@ public interface BookingRepository extends JpaRepository<BookingEntity, UUID> {
 	}
 
 	Page<BookingEntity> findByMachineIdIn(Collection<UUID> machineIds, Pageable pageable);
+
+	Page<BookingEntity> findByOwnerId(UUID ownerId, Pageable pageable);
+
+	Page<BookingEntity> findByOwnerIdAndStatus(UUID ownerId, BookingStatus status, Pageable pageable);
 	
 	Page<BookingEntity> findByCustomerIdAndStatus(UUID customerId, BookingStatus status, Pageable pageable);
 

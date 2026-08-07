@@ -9,12 +9,10 @@ import com.rentitup.booking_service.repository.BookingRepository;
 import com.rentitup.booking_service.service.BookingService;
 import com.rentitup.common.exceptions.BadRequestException;
 import com.rentitup.common.exceptions.ConflictException;
+import com.rentitup.common.exceptions.ForbiddenException;
 import com.rentitup.common.exceptions.NotFoundException;
-import com.rentitup.common.exceptions.ServiceUnavailableException;
 import com.rentitup.shared.proto.booking.CreateBookingRequest;
 import com.rentitup.shared.proto.catalog.Machine;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -43,32 +41,8 @@ public class BookingServiceImpl implements BookingService {
 	public BookingEntity createBooking(CreateBookingRequest request) {
 		log.info("Creating booking for machine: {}", request.getMachineId());
 
-		Machine machine;
-		try {
-			machine = catalogGrpcClient.getMachine(request.getMachineId());
-
-		} catch (StatusRuntimeException e) {
-			log.error("Failed to fetch machine from catalog service: {}", e.getStatus());
-			if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
-				throw new NotFoundException("Machine not found: " + request.getMachineId());
-			}
-			if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
-				throw new BadRequestException("Invalid machine ID: " + request.getMachineId());
-			}
-			throw new ServiceUnavailableException("Catalog service unavailable: " + e.getStatus().getDescription(), e);
-		}
-		try {
-			userGrpcClient.getUser(request.getCustomerId());
-		}
-		catch (StatusRuntimeException e) {
-			log.error("Failed to fetch user from catalog service: {}", e.getStatus());
-			if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
-				throw new NotFoundException("Customer not found: " + request.getCustomerId());
-			}
-			if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
-				throw new BadRequestException("Invalid customer ID: " + request.getCustomerId());
-			}
-		}
+		Machine machine = catalogGrpcClient.getMachine(request.getMachineId());
+		userGrpcClient.getUser(request.getCustomerId());
 
 		UUID machineId = UUID.fromString(request.getMachineId());
 		LocalDate startDate = bookingMapper.fromTimestampToLocalDate(request.getStartDate());
@@ -91,8 +65,7 @@ public class BookingServiceImpl implements BookingService {
 		}
 
 		BigDecimal basePrice = new BigDecimal(machine.getBasePrice().getAmount());
-		long days = ChronoUnit.DAYS.between(startDate, endDate);
-		if (days == 0) days = 1;
+		long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
 
 		BigDecimal totalPrice = switch (machine.getPriceType()) {
 			case WEEKLY -> {
@@ -113,6 +86,7 @@ public class BookingServiceImpl implements BookingService {
 		BookingEntity createdBooking = BookingEntity.builder()
 				.machineId(machineId)
 				.customerId(UUID.fromString(request.getCustomerId()))
+				.ownerId(UUID.fromString(machine.getOwnerId()))
 				.startDate(startDate)
 				.endDate(endDate)
 				.pickupLatitude(
@@ -127,6 +101,7 @@ public class BookingServiceImpl implements BookingService {
 				.status(BookingStatus.PENDING)
 				.dailyRate(basePrice)
 				.totalAmount(totalPrice)
+				.currency(machine.getBasePrice().getCurrency())
 				.durationDays((int) days)
 				.specialRequirements(
 						!request.getSpecialRequirements().isEmpty() ?
@@ -145,9 +120,12 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
-	public BookingEntity updateBookingStatus(UUID bookingId, BookingStatus status) {
+	public BookingEntity updateBookingStatus(UUID bookingId, BookingStatus status, UUID actorId, boolean actorIsAdmin) {
 		log.info("Updating booking status: {}", status);
 		BookingEntity bookingToUpdate = getBookingById(bookingId);
+		if (!actorIsAdmin && !bookingToUpdate.getOwnerId().equals(actorId)) {
+			throw new ForbiddenException("This booking does not belong to the authenticated owner");
+		}
 		log.info("Checking booking status flow: {} -> {}", bookingToUpdate.getStatus(), status);
 		if (!bookingStatusFlow(bookingToUpdate.getStatus(), status)) {
 			throw new ConflictException("Invalid booking status transition: " + bookingToUpdate.getStatus() + " -> " + status);
@@ -181,8 +159,10 @@ public class BookingServiceImpl implements BookingService {
 
 	@Override
 	public Page<BookingEntity> getOwnerBookings(UUID ownerId, Pageable pageable, BookingStatus status) {
-		List<UUID> machineIds = catalogGrpcClient.getMachineIdsByOwnerId(ownerId.toString());
-		return bookingRepository.findByMachineIdIn(machineIds, pageable);
+		if (status != null) {
+			return bookingRepository.findByOwnerIdAndStatus(ownerId, status, pageable);
+		}
+		return bookingRepository.findByOwnerId(ownerId, pageable);
 	}
 
 	@Override
@@ -213,7 +193,7 @@ public class BookingServiceImpl implements BookingService {
 		}
 
 		return switch (currentStatus) {
-			case PENDING -> newStatus == BookingStatus.CONFIRMED;
+			case PENDING -> newStatus == BookingStatus.CONFIRMED || newStatus == BookingStatus.REJECTED;
 			case CONFIRMED -> newStatus == BookingStatus.PAID || newStatus == BookingStatus.CANCELLED;
 			case PAID -> newStatus == BookingStatus.ONGOING;
 			case ONGOING -> newStatus == BookingStatus.COMPLETED;

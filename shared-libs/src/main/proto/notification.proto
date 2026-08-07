@@ -151,9 +151,21 @@ message ListTemplatesResponse {
   repeated NotificationTemplate templates = 1;
 }
 
+message SubscribeRequest{
+  string user_id=1;
+}
+
+message NotificationEvent {
+  string notification_id = 1;
+  string subject = 2;
+  string body = 3;
+  map<string,string> data = 4;
+}
 
 service NotificationService {
   rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+
+  rpc SubscribeNotifications(SubscribeRequest) returns (stream NotificationEvent );
 
   rpc SendBulkNotification(SendBulkNotificationRequest) returns (SendBulkNotificationResponse);
 
@@ -166,5 +178,6 @@ service NotificationService {
   rpc RetryNotification(RetryNotificationRequest) returns (RetryNotificationResponse);
 
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
+
   rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
 }

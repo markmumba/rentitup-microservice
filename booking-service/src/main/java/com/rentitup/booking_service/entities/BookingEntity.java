@@ -27,6 +27,9 @@ public class BookingEntity extends BaseEntity {
 	@Column(name = "customer_id",nullable = false)
 	private UUID customerId;
 
+	@Column(name = "owner_id", nullable = false)
+	private UUID ownerId;
+
 	@Column(name = "start_date",nullable = false)
 	private LocalDate startDate;
 

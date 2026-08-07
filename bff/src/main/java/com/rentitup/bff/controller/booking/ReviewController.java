@@ -3,7 +3,7 @@ package com.rentitup.bff.controller.booking;
 import com.rentitup.bff.common.pagination.PaginationDto;
 import com.rentitup.bff.common.response.ResponseBuilder;
 import com.rentitup.common.grpc.client.GrpcClient;
-import com.rentitup.common.security.SecurityUtils;
+import com.rentitup.bff.common.security.SecurityUtils;
 import com.rentitup.shared.proto.booking.*;
 import com.rentitup.shared.proto.common.PaginationRequest;
 import io.swagger.v3.oas.annotations.Operation;

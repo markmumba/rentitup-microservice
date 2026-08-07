@@ -4,9 +4,11 @@ import com.rentitup.common.grpc.GrpcExceptionHandler;
 import com.rentitup.common.util.PaginationHelper;
 import com.rentitup.notification_service.entity.NotificationEntity;
 import com.rentitup.notification_service.service.NotificationService;
+import com.rentitup.notification_service.service.channel.PushSubscriptionRegistry;
 import com.rentitup.notification_service.template.NotificationTemplateService;
 import com.rentitup.notification_service.template.TemplateDefinition;
 import com.rentitup.shared.proto.notification.*;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 
 	private final NotificationService notificationService;
 	private final NotificationTemplateService templateService;
+	private final PushSubscriptionRegistry pushSubscriptionRegistry;
 
 	@Override
 	public void sendNotification(SendNotificationRequest request, StreamObserver<SendNotificationResponse> responseObserver) {
@@ -50,6 +53,17 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 		} catch (Exception e) {
 			GrpcExceptionHandler.handleException(e, responseObserver, "SendNotification");
 		}
+	}
+
+	@Override
+	public void subscribeNotifications(SubscribeRequest request, StreamObserver<NotificationEvent> responseObserver) {
+		String userId = request.getUserId();
+		if (userId == null || userId.isBlank()) {
+			GrpcExceptionHandler.handleException(Status.INVALID_ARGUMENT.asException(), responseObserver,"Subscribing to a notification");
+			return;
+		}
+		log.info("grpc: user {} subscribing to push notifications",userId);
+		pushSubscriptionRegistry.subscribe(userId,responseObserver);
 	}
 
 	@Override
@@ -200,7 +214,7 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 
 			ListTemplatesResponse.Builder responseBuilder = ListTemplatesResponse.newBuilder();
 			templates.stream()
-					.filter(t -> !request.hasActiveOnly() || !request.getActiveOnly() || t.active())
+					.filter(t -> !request.hasActiveOnly() || !request.getActiveOnly() || t.isActive())
 					.forEach(t -> responseBuilder.addTemplates(mapToProto(t)));
 
 			responseObserver.onNext(responseBuilder.build());
@@ -209,8 +223,6 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 			GrpcExceptionHandler.handleException(e, responseObserver, "ListTemplates");
 		}
 	}
-
-	// ==================== Mapping Methods ====================
 
 	private NotificationService.NotificationRequest mapToServiceRequest(SendNotificationRequest request) {
 		return new NotificationService.NotificationRequest(
@@ -299,14 +311,14 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 
 	private NotificationTemplate mapToProto(TemplateDefinition template) {
 		return NotificationTemplate.newBuilder()
-				.setKey(template.key())
-				.setName(template.name() != null ? template.name() : "")
-				.setDescription(template.description() != null ? template.description() : "")
-				.setChannel(mapChannel(template.channel()))
-				.setSubjectTemplate(template.subjectTemplate() != null ? template.subjectTemplate() : "")
-				.setBodyTemplate(template.bodyTemplate() != null ? template.bodyTemplate() : "")
-				.addAllRequiredFields(template.requiredFields())
-				.setIsActive(template.active())
+				.setKey(template.getKey())
+				.setName(template.getName() != null ? template.getName() : "")
+				.setDescription(template.getDescription() != null ? template.getDescription() : "")
+				.setChannel(mapChannel(template.getChannel()))
+				.setSubjectTemplate(template.getSubjectTemplate() != null ? template.getSubjectTemplate() : "")
+				.setBodyTemplate(template.getBodyTemplate() != null ? template.getBodyTemplate() : "")
+				.addAllRequiredFields(template.getRequiredFields())
+				.setIsActive(template.isActive())
 				.build();
 	}
 }

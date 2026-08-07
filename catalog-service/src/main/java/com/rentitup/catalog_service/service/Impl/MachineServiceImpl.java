@@ -18,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -57,7 +59,7 @@ public class MachineServiceImpl implements MachineService {
 
 		machine.setCategory(category);
 		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		cacheMachineAfterCommit(saved);
 		return saved;
 	}
 
@@ -86,7 +88,9 @@ public class MachineServiceImpl implements MachineService {
 	public MachineEntity updateMachine(UUID id, MachineEntity updates, UUID categoryId) {
 		log.info("Updating machine: {}", id);
 
-		MachineEntity existing = getMachine(id);
+		// Writes must start from a managed primary-database entity, never a
+		// JSON-deserialized cache copy.
+		MachineEntity existing = getPersistedMachine(id);
 
 		if (updates.getName() != null) {
 			existing.setName(updates.getName());
@@ -130,8 +134,8 @@ public class MachineServiceImpl implements MachineService {
 			);
 			existing.setCategory(category);
 		}
-		MachineEntity saved = machineRepository.save(existing);
-		cacheService.putMachine(saved);
+		MachineEntity saved = machineRepository.saveAndFlush(existing);
+		cacheMachineAfterCommit(saved);
 		return saved;
 	}
 
@@ -206,7 +210,7 @@ public class MachineServiceImpl implements MachineService {
 
 		machine.addImage(image);
 		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		cacheMachineAfterCommit(saved);
 		return saved;
 	}
 
@@ -228,7 +232,7 @@ public class MachineServiceImpl implements MachineService {
 			machine.getImages().getFirst().setPrimary(true);
 		}
 		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		cacheMachineAfterCommit(saved);
 		if (imageToRemove.getObjectKey() != null && !imageToRemove.getObjectKey().isBlank()) {
 			MinioOutbox minioOutbox = MinioOutbox.builder()
 					.objectKey(imageToRemove.getObjectKey())
@@ -256,7 +260,7 @@ public class MachineServiceImpl implements MachineService {
 		newPrimary.setPrimary(true);
 
 		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		cacheMachineAfterCommit(saved);
 		return saved;
 	}
 
@@ -321,11 +325,11 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional
 	public MachineEntity updateMachineStatus(UUID machineId, MachineStatus status) {
-		MachineEntity machine = getMachine(machineId);
+		MachineEntity machine = getPersistedMachine(machineId);
 		machine.setStatus(status);
 
-		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		MachineEntity saved = machineRepository.saveAndFlush(machine);
+		cacheMachineAfterCommit(saved);
 		return saved;
 	}
 
@@ -339,22 +343,41 @@ public class MachineServiceImpl implements MachineService {
 	@Override
 	@Transactional
 	public MachineEntity updateMachineRating(UUID machineId, BigDecimal newAverageRating, int totalReviews) {
-		MachineEntity machine = getMachine(machineId);
+		MachineEntity machine = getPersistedMachine(machineId);
 		machine.setAverageRating(newAverageRating);
 		machine.setTotalReviews(totalReviews);
-		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		MachineEntity saved = machineRepository.saveAndFlush(machine);
+		cacheMachineAfterCommit(saved);
 		return saved;
 	}
 
 	@Override
 	@Transactional
 	public MachineEntity incrementTotalRentals(UUID machineId) {
-		MachineEntity machine = getMachine(machineId);
+		MachineEntity machine = getPersistedMachine(machineId);
 		machine.setTotalRentals(machine.getTotalRentals() + 1);
-		MachineEntity saved = machineRepository.save(machine);
-		cacheService.putMachine(saved);
+		MachineEntity saved = machineRepository.saveAndFlush(machine);
+		cacheMachineAfterCommit(saved);
 		return saved;
+	}
+
+	private MachineEntity getPersistedMachine(UUID id) {
+		return machineRepository.findByIdAndDeletedFalse(id)
+				.orElseThrow(() -> new NotFoundException("Machine not found: " + id));
+	}
+
+	private void cacheMachineAfterCommit(MachineEntity machine) {
+		if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+			cacheService.putMachine(machine);
+			return;
+		}
+
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				cacheService.putMachine(machine);
+			}
+		});
 	}
 
 	@Override

@@ -81,7 +81,9 @@ public class BookingGrpcServer extends BookingServiceGrpc.BookingServiceImplBase
 			log.info("gRPC: Update booking status: {}", request.getId());
 			UUID bookingId = UUID.fromString(request.getId());
 			BookingStatus status = bookingMapper.mapProtoStatus(request.getStatus());
-			BookingEntity booking = bookingService.updateBookingStatus(bookingId, status);
+			UUID actorId = UUID.fromString(request.getActorId());
+			BookingEntity booking = bookingService.updateBookingStatus(
+					bookingId, status, actorId, request.getActorIsAdmin());
 			BookingResponse response = BookingResponse.newBuilder()
 					.setBooking(bookingMapper.toProto(booking))
 					.build();

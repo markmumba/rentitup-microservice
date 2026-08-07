@@ -17,7 +17,6 @@ public class SmsChannelHandler implements NotificationChannelHandler {
     @Value("${app.sms.enabled:false}")
     private boolean smsEnabled;
 
-    // Phone number pattern: starts with + followed by 10-15 digits
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+[1-9]\\d{9,14}$");
 
     @Override
@@ -31,19 +30,6 @@ public class SmsChannelHandler implements NotificationChannelHandler {
             log.warn("SMS is disabled. Would have sent to: {}", notification.getRecipient());
             throw new NotificationSendException("SMS channel is currently disabled");
         }
-
-        // TODO: Integrate with SMS provider (Twilio, Africa's Talking, etc.)
-        // Example integration:
-        //
-        // try {
-        //     smsClient.send(
-        //         notification.getRecipient(),
-        //         notification.getBody()
-        //     );
-        //     log.info("SMS sent to: {}", notification.getRecipient());
-        // } catch (Exception e) {
-        //     throw new NotificationSendException("SMS send failed", e);
-        // }
 
         log.info("SMS would be sent to: {} with message: {}",
                 notification.getRecipient(),

@@ -19,6 +19,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import static com.rentitup.bff.common.security.SecurityUtils.getCurrentUserId;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @Slf4j
@@ -145,22 +147,4 @@ public class UserController {
 		return ResponseBuilder.success("User verification updated", response.getUser());
 	}
 
-	private String getCurrentUserId() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-		if (auth instanceof JwtAuthenticationToken jwtAuth) {
-			Jwt jwt = jwtAuth.getToken();
-			return jwt.getClaimAsString("user_id");
-		}
-
-		if (auth instanceof OAuth2AuthenticationToken oauthAuth) {
-			OAuth2User principal = oauthAuth.getPrincipal();
-			if (principal.getAttribute("user_id") != null) {
-				return principal.getAttribute("user_id");
-			}
-			return principal.getName();
-		}
-
-		throw new IllegalStateException("Unsupported authentication type: " + auth.getClass().getName());
-	}
 }
