@@ -204,6 +204,23 @@ public class NotificationServiceImpl implements NotificationService {
         return notification;
     }
 
+    @Override
+    @Transactional
+    public NotificationEntity markRead(UUID notificationId, UUID userId) {
+        NotificationEntity notification = notificationRepository.findByIdAndUserId(notificationId, userId)
+                .orElseThrow(() -> new NotFoundException("Notification not found: " + notificationId));
+        if (notification.getReadAt() == null) {
+            notification.setReadAt(LocalDateTime.now());
+        }
+        return notificationRepository.save(notification);
+    }
+
+    @Override
+    @Transactional
+    public int markAllRead(UUID userId) {
+        return notificationRepository.markAllRead(userId);
+    }
+
     private NotificationChannelHandler getHandler(NotificationChannel channel) {
         NotificationChannelHandler handler = channelHandlers.get(channel);
         if (handler == null) {

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.UUID;
 public interface NotificationRepository extends JpaRepository<NotificationEntity, UUID> {
 
     Page<NotificationEntity> findByUserId(UUID userId, Pageable pageable);
+
+    java.util.Optional<NotificationEntity> findByIdAndUserId(UUID id, UUID userId);
 
     Page<NotificationEntity> findByUserIdAndChannel(UUID userId, NotificationChannel channel, Pageable pageable);
 
@@ -35,4 +38,8 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
             @Param("status") NotificationStatus status,
             Pageable pageable
     );
+
+    @Modifying
+    @Query("UPDATE NotificationEntity n SET n.readAt = CURRENT_TIMESTAMP WHERE n.userId = :userId AND n.readAt IS NULL")
+    int markAllRead(@Param("userId") UUID userId);
 }

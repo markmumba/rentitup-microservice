@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
@@ -169,6 +171,35 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 	}
 
 	@Override
+	public void markNotificationRead(MarkNotificationReadRequest request, StreamObserver<MarkNotificationReadResponse> responseObserver) {
+		try {
+			NotificationEntity notification = notificationService.markRead(
+					UUID.fromString(request.getNotificationId()),
+					UUID.fromString(request.getUserId())
+			);
+			responseObserver.onNext(MarkNotificationReadResponse.newBuilder()
+					.setNotification(mapToProto(notification))
+					.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "MarkNotificationRead");
+		}
+	}
+
+	@Override
+	public void markAllNotificationsRead(MarkAllNotificationsReadRequest request, StreamObserver<MarkAllNotificationsReadResponse> responseObserver) {
+		try {
+			int updatedCount = notificationService.markAllRead(UUID.fromString(request.getUserId()));
+			responseObserver.onNext(MarkAllNotificationsReadResponse.newBuilder()
+					.setUpdatedCount(updatedCount)
+					.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			GrpcExceptionHandler.handleException(e, responseObserver, "MarkAllNotificationsRead");
+		}
+	}
+
+	@Override
 	public void retryNotification(RetryNotificationRequest request, StreamObserver<RetryNotificationResponse> responseObserver) {
 		try {
 			UUID notificationId = UUID.fromString(request.getNotificationId());
@@ -305,8 +336,25 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
 		if (entity.getErrorMessage() != null) {
 			builder.setErrorMessage(entity.getErrorMessage());
 		}
+		if (entity.getCreatedAt() != null) {
+			builder.setCreatedAt(toProtoTimestamp(entity.getCreatedAt()));
+		}
+		if (entity.getSentAt() != null) {
+			builder.setSentAt(toProtoTimestamp(entity.getSentAt()));
+		}
+		if (entity.getReadAt() != null) {
+			builder.setReadAt(toProtoTimestamp(entity.getReadAt()));
+		}
 
 		return builder.build();
+	}
+
+	private com.rentitup.shared.proto.common.Timestamp toProtoTimestamp(LocalDateTime value) {
+		java.time.Instant instant = value.toInstant(ZoneOffset.UTC);
+		return com.rentitup.shared.proto.common.Timestamp.newBuilder()
+				.setSeconds(instant.getEpochSecond())
+				.setNanos(instant.getNano())
+				.build();
 	}
 
 	private NotificationTemplate mapToProto(TemplateDefinition template) {

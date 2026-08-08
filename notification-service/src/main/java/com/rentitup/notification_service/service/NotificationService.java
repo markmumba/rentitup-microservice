@@ -43,6 +43,10 @@ public interface NotificationService {
 
     NotificationEntity retry(UUID notificationId);
 
+    NotificationEntity markRead(UUID notificationId, UUID userId);
+
+    int markAllRead(UUID userId);
+
     record NotificationRequest(
             String recipient,
             NotificationChannel channel,

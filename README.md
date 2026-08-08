@@ -269,3 +269,8 @@ DB_PASSWORD=qwerty123
    - gRPC support
    - JPA + Flyway + PostgreSQL
    - Lombok + MapStruct
+## Notification Delivery Reference
+
+The current SSE/gRPC notification flow and the proposed multi-instance
+RabbitMQ fanout architecture are documented in
+[NOTIFICATION_DELIVERY_ARCHITECTURE.md](NOTIFICATION_DELIVERY_ARCHITECTURE.md).

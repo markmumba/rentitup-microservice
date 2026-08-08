@@ -4,6 +4,7 @@ import com.rentitup.booking_service.entities.BookingEntity;
 import com.rentitup.booking_service.enums.BookingStatus;
 import com.rentitup.booking_service.grpc.client.CatalogGrpcClient;
 import com.rentitup.booking_service.grpc.client.UserGrpcClient;
+import com.rentitup.booking_service.grpc.client.NotificationGrpcClient;
 import com.rentitup.booking_service.mapper.BookingMapper;
 import com.rentitup.booking_service.repository.BookingRepository;
 import com.rentitup.booking_service.service.BookingService;
@@ -13,6 +14,7 @@ import com.rentitup.common.exceptions.ForbiddenException;
 import com.rentitup.common.exceptions.NotFoundException;
 import com.rentitup.shared.proto.booking.CreateBookingRequest;
 import com.rentitup.shared.proto.catalog.Machine;
+import com.rentitup.shared.proto.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
 	private final BookingRepository bookingRepository;
 	private final CatalogGrpcClient catalogGrpcClient;
 	private final UserGrpcClient userGrpcClient;
+	private final NotificationGrpcClient notificationGrpcClient;
 	private final BookingMapper bookingMapper;
 
 
@@ -42,7 +46,7 @@ public class BookingServiceImpl implements BookingService {
 		log.info("Creating booking for machine: {}", request.getMachineId());
 
 		Machine machine = catalogGrpcClient.getMachine(request.getMachineId());
-		userGrpcClient.getUser(request.getCustomerId());
+		User customer = userGrpcClient.getUser(request.getCustomerId());
 
 		UUID machineId = UUID.fromString(request.getMachineId());
 		LocalDate startDate = bookingMapper.fromTimestampToLocalDate(request.getStartDate());
@@ -110,6 +114,18 @@ public class BookingServiceImpl implements BookingService {
 
 		BookingEntity saved = bookingRepository.save(createdBooking);
 		log.info("Booking created successfully with id: {}", saved.getId());
+		notificationGrpcClient.sendPush(
+				saved.getOwnerId(),
+				"new_booking_request",
+				Map.of(
+						"customerName", customer.getFullName(),
+						"machineName", machine.getName(),
+						"startDate", saved.getStartDate().toString(),
+						"endDate", saved.getEndDate().toString(),
+						"bookingId", saved.getId().toString(),
+						"action_url", "/owner/bookings"
+				)
+		);
 		return saved;
 	}
 
@@ -141,6 +157,20 @@ public class BookingServiceImpl implements BookingService {
 		}
 		BookingEntity saved = bookingRepository.save(bookingToUpdate);
 		log.info("Booking status updated successfully with id: {}", saved.getId());
+		if (status == BookingStatus.CONFIRMED || status == BookingStatus.REJECTED) {
+			Machine machine = catalogGrpcClient.getMachine(saved.getMachineId().toString());
+			notificationGrpcClient.sendPush(
+					saved.getCustomerId(),
+					status == BookingStatus.CONFIRMED ? "booking_confirmed" : "booking_rejected",
+					Map.of(
+							"machineName", machine.getName(),
+							"startDate", saved.getStartDate().toString(),
+							"endDate", saved.getEndDate().toString(),
+							"bookingId", saved.getId().toString(),
+							"action_url", "/bookings"
+					)
+			);
+		}
 		return saved;
 	}
 
@@ -182,6 +212,16 @@ public class BookingServiceImpl implements BookingService {
 		bookingToCancel.setCancellationReason(reason);
 		BookingEntity saved = bookingRepository.save(bookingToCancel);
 		log.info("Booking cancelled successfully with id: {}", saved.getId());
+		Machine machine = catalogGrpcClient.getMachine(saved.getMachineId().toString());
+		notificationGrpcClient.sendPush(
+				saved.getCustomerId(),
+				"booking_cancelled",
+				Map.of(
+						"bookingId", saved.getId().toString(),
+						"machineName", machine.getName(),
+						"action_url", "/bookings"
+				)
+		);
 		return saved;
 	}
 

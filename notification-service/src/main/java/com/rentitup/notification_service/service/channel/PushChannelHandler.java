@@ -39,10 +39,11 @@ public class PushChannelHandler implements NotificationChannelHandler {
 				.putAllData(notification.getData()!= null ?  notification.getData(): Map.of())
 				.build();
 
-		boolean deliverd = pushSubscriptionRegistry.publish(userId,event);
+		boolean delivered = pushSubscriptionRegistry.publish(userId,event);
 
-		if(!deliverd) {
-			throw new NotificationSendException("user has no active push notification");
+		if (!delivered) {
+			log.debug("Push notification {} persisted while user {} is offline", notification.getId(), userId);
+			return;
 		}
 		log.info(
 				"Delivered push notification {} to user {}",
